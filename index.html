@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Moby Family — прототип</title>
+    <meta name="description" content="Интерактивный прототип детско-семейного банкинга в Moby (МТБанк): родительский хаб, детский контур 7–13 и подростковый 14–17." />
+    <meta name="theme-color" content="#2334C8" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='%232334C8'/%3E%3Cpath d='M4 30 L38 14 L38 19 L6 34Z' fill='%23E42C26'/%3E%3Cpath d='M12 37 L38 25 L37 29 L18 38Z' fill='%23FF5912'/%3E%3C/svg%3E" />
+
+    <!-- Шрифты бренда: Inter (интерфейс) + TikTok Sans (акцидентный). Отдельные запросы — сбой одного не ломает другой. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=TikTok+Sans:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;800&display=swap" />
+
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/views.css" />
+
+    <!-- Скрипты и картинки карты грузятся параллельно, без цепочки ожиданий -->
+    <link rel="modulepreload" href="js/main.js" />
+    <link rel="modulepreload" href="js/config.js" />
+    <link rel="modulepreload" href="js/core/actions.js" />
+    <link rel="modulepreload" href="js/core/artifacts.js" />
+    <link rel="modulepreload" href="js/core/catalog.js" />
+    <link rel="modulepreload" href="js/core/format.js" />
+    <link rel="modulepreload" href="js/core/initial-state.js" />
+    <link rel="modulepreload" href="js/core/rules.js" />
+    <link rel="modulepreload" href="js/core/store.js" />
+    <link rel="modulepreload" href="js/ui/artifact-art.js" />
+    <link rel="modulepreload" href="js/ui/components.js" />
+    <link rel="modulepreload" href="js/ui/dropdown.js" />
+    <link rel="modulepreload" href="js/ui/icons.js" />
+    <link rel="modulepreload" href="js/ui/overlay.js" />
+    <link rel="modulepreload" href="js/ui/shell.js" />
+    <link rel="modulepreload" href="js/views/kid.js" />
+    <link rel="modulepreload" href="js/views/mascot.js" />
+    <link rel="modulepreload" href="js/views/parent.js" />
+    <link rel="modulepreload" href="js/views/shared.js" />
+    <link rel="modulepreload" href="js/views/teen.js" />
+    <link rel="preload" as="image" href="assets/cards/student_card_kid.webp?v=2" />
+    <link rel="preload" as="image" href="assets/cards/student_card_teen.webp?v=2" />
+    <link rel="preload" as="image" href="assets/mascot/squirrel1.webp" />
+    <link rel="preload" as="image" href="assets/mascot/squirrel_brown.webp" />
+  </head>
+
+  <body>
+    <!-- 1. Панель тестирования для жюри — жёстко зафиксирована сверху -->
+    <header class="jury-bar">
+      <div class="jury-brand">
+        <span data-brand-mark aria-hidden="true"></span>
+        <div class="jury-brand__text">
+          <div class="jury-brand__title">Moby Family</div>
+          <div class="jury-brand__sub">Стенд для жюри</div>
+        </div>
+      </div>
+
+      <nav class="role-tabs" role="tablist" aria-label="Роль для тестирования">
+        <button class="role-tab" role="tab" id="tab-parent" aria-controls="screen-scroll" data-role-tab="parent"><span class="role-tab__full">Главный родственник</span><span class="role-tab__short">Родитель</span></button>
+        <button class="role-tab" role="tab" id="tab-kid" aria-controls="screen-scroll" data-role-tab="kid"><span class="role-tab__full">Ребёнок 7–13</span><span class="role-tab__short">7–13</span></button>
+        <button class="role-tab" role="tab" id="tab-teen" aria-controls="screen-scroll" data-role-tab="teen"><span class="role-tab__full">Ребёнок 14–17</span><span class="role-tab__short">14–17</span></button>
+      </nav>
+
+      <div class="jury-actions">
+        <button class="btn btn--ghost btn--sm" type="button" data-reset title="Вернуть исходные данные демо" aria-label="Сбросить демо">
+          <span class="btn__label">Сбросить демо</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="stage">
+
+      <!-- Смартфон -->
+      <div class="device">
+        <div class="device__island" aria-hidden="true"></div>
+        <section class="screen theme-parent" id="screen" aria-label="Экран Moby">
+          <div class="screen__scroll" id="screen-scroll" role="tabpanel" tabindex="-1"></div>
+          <div data-overlay-root></div>
+          <div class="toast-stack" data-toast-root aria-live="polite"></div>
+        </section>
+      </div>
+    </main>
+
+    <noscript>Для работы прототипа нужен JavaScript (ES2022, модули).</noscript>
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

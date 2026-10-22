@@ -1,0 +1,105 @@
+/* ==========================================================================
+   Дизайн-токены МТБанк / Moby (источник: design-brif.md)
+   Пропорция: 60% фон и MT Blue, 40% акценты (Red 20% / Orange 20%).
+   Правило: оранжевый появляется ТОЛЬКО вместе с синим и красным.
+   Интерфейс плоский. Градиенты есть только у линии сканирования QR
+   (--ray-line) и у радара геолокации.
+   ========================================================================== */
+:root {
+  /* Акцентная палитра */
+  --mt-blue: #2334c8;
+  --mt-blue-600: #1c2aa6;
+  --mt-blue-800: #121b6e;
+  --mt-blue-950: #0a0f3d;
+  --mt-red: #e42c26;
+  --mt-orange: #ff5912;
+
+  /* Фоновая палитра */
+  --mt-cloud: #e7f4ff;
+  --mt-sky: #97cfff;
+  --mt-soft: #82aed3;
+  --mt-white: #ffffff;
+  --mt-ink: #141416;
+
+  /* Нейтральные (производные от ink для текста — контраст ≥ 4.5:1 на светлом) */
+  --ink-70: #3c4257;
+  --ink-55: #5a6178;
+  --line: rgba(35, 52, 200, 0.12);
+
+  /* Семантика */
+  --success: #138a5b;
+  --success-bg: #e3f6ee;
+  --danger: var(--mt-red);
+  --danger-bg: #fde9e8;
+
+  /* Линия сканирования QR */
+  --ray-line: linear-gradient(90deg, var(--mt-blue), var(--mt-red) 60%, var(--mt-orange));
+
+  /* Редкость артефактов */
+  --rar-common: #82aed3;
+  --rar-common-ink: #10304f;
+  --rar-rare: #e42c26;
+  --rar-legendary: #ff5912;
+
+  /* Типографика */
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'TikTok Sans', 'Geologica', 'Inter', system-ui, sans-serif;
+
+  --fs-11: 0.6875rem;
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-15: 0.9375rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-22: 1.375rem;
+  --fs-28: 1.75rem;
+  --fs-36: 2.25rem;
+
+  /* Геометрия */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-blur: 18px;
+  --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -10px 24px rgba(35, 52, 200, 0.05);
+  --shadow-soft: 0 10px 30px rgba(18, 27, 110, 0.1);
+  --shadow-lift: 0 18px 44px rgba(18, 27, 110, 0.18);
+
+  /* Слои (z-index scale) */
+  --z-screen: 1;
+  --z-sticky: 10;
+  --z-sheet: 30;
+  --z-toast: 40;
+  --z-jury: 50;
+
+  /* Анимация */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-fast: 160ms;
+  --t-base: 240ms;
+
+  --jury-h: 64px;
+
+  /* Карточки: одинаковые ширина, высота и отступы на всех вкладках */
+  --card-h: 300px;
+  --card-pad: 16px;
+  --r-card: 18px;
+  --gap-section: 12px;
+
+  /* Единый фон всех окон и шторок (плоский) */
+  --app-bg: var(--mt-cloud);
+  --sheet-bg: var(--mt-cloud);
+}

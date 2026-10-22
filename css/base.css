@@ -1,0 +1,405 @@
+/* ==========================================================================
+   Base: reset, оболочка демо-стенда (панель жюри, сцена, корпус смартфона)
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Страница не прокручивается: панель вкладок в потоке сверху, смартфон занимает остаток высоты.
+   Так панель жюри никогда не перекрывает приложение — на любом размере окна. */
+body {
+  margin: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  font-size: var(--fs-15);
+  line-height: 1.5;
+  color: var(--mt-ink);
+  background: var(--mt-cloud);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--mt-sky);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Панель тестирования для жюри (жёстко зафиксирована сверху) ---------- */
+.jury-bar {
+  --accent: var(--mt-blue);
+  --accent-soft: rgba(35, 52, 200, 0.08);
+  --accent-soft-strong: rgba(35, 52, 200, 0.14);
+  position: relative;
+  z-index: var(--z-jury);
+  flex: none;
+  height: var(--jury-h);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-5);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 6px 24px rgba(18, 27, 110, 0.06);
+}
+
+.jury-brand .bank-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.jury-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.jury-brand__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-16);
+  line-height: 1.1;
+}
+
+.jury-brand__sub {
+  font-size: var(--fs-11);
+  color: var(--ink-55);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.role-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 auto;
+  border-radius: var(--r-pill);
+  background: rgba(35, 52, 200, 0.07);
+  border: 1px solid var(--line);
+}
+
+.role-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  font-size: var(--fs-14);
+  color: var(--ink-70);
+  white-space: nowrap;
+  /* выбор вкладки — мгновенно, без переходов: ни одного промежуточного кадра */
+  transition: none;
+}
+
+.role-tab:hover {
+  color: var(--mt-blue);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.role-tab[aria-selected='true'] {
+  color: #fff;
+  background: var(--mt-blue);
+  box-shadow: 0 6px 16px rgba(35, 52, 200, 0.35);
+}
+
+.role-tab svg {
+  width: 18px;
+  height: 18px;
+}
+
+.role-tab__short {
+  display: none;
+}
+
+.role-tab__badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--mt-red);
+  color: #fff;
+  font-size: var(--fs-11);
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  animation: pop var(--t-base) var(--ease);
+}
+
+.jury-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* ---------- Сцена ---------- */
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 16px;
+}
+
+.device {
+  position: relative;
+  width: 390px;
+  max-width: 100%;
+  height: min(844px, 100%);
+  padding: 11px;
+  border-radius: 56px;
+  background: var(--mt-ink);
+  box-shadow:
+    0 0 0 1.5px #3a3b42,
+    0 40px 80px rgba(10, 15, 61, 0.35),
+    0 12px 24px rgba(10, 15, 61, 0.2);
+}
+
+.device__island {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  translate: -50% 0;
+  width: 112px;
+  height: 32px;
+  border-radius: var(--r-pill);
+  background: #000;
+  z-index: calc(var(--z-toast) + 1);
+}
+
+.screen {
+  position: relative;
+  height: 100%;
+  border-radius: 46px;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--app-bg);
+  color: var(--mt-ink);
+}
+
+.screen__scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.screen__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.status-bar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  height: 54px;
+  padding: 18px 30px 0 34px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--fs-15);
+  font-weight: 600;
+  color: var(--mt-ink);
+  background: rgba(231, 244, 255, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.status-bar__icons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.status-bar__icons svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- Адаптив ---------- */
+@media (max-width: 860px) {
+  .jury-brand__text,
+  .jury-actions .btn__label {
+    display: none;
+  }
+}
+
+/* Короткие подписи вкладок, пока полные не помещаются в одну строку */
+@media (max-width: 720px) {
+  .role-tab {
+    padding: 0 14px;
+  }
+
+  .role-tab__full {
+    display: none;
+  }
+
+  .role-tab__short {
+    display: inline;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --jury-h: 60px;
+  }
+
+  .jury-bar {
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  .jury-brand {
+    display: none;
+  }
+
+  .role-tabs {
+    flex: 1;
+    margin: 0;
+  }
+
+  .role-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0 6px;
+    font-size: var(--fs-12);
+  }
+
+  .role-tab svg {
+    display: none;
+  }
+
+  .role-tab__full {
+    display: none;
+  }
+
+  .role-tab__short {
+    display: inline;
+  }
+
+  .jury-actions .btn {
+    width: 44px;
+    padding: 0;
+  }
+
+  .stage {
+    padding: 0;
+  }
+
+  .device {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .device__island {
+    display: none;
+  }
+
+  .screen {
+    border-radius: 0;
+  }
+
+  .status-bar {
+    display: none;
+  }
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
