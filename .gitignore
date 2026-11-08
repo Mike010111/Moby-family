@@ -7,3 +7,6 @@ build/
 out/
 node_modules/
 .env
+.metals/
+.bloop/
+.vscode/
