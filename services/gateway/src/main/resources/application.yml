@@ -15,6 +15,12 @@ spring:
       server:
         webflux:
           routes:
+            # Проверка доступности бэкенда для фронтенда (офлайн-демо, если не ответил): readiness самого gateway
+            - id: health
+              uri: forward:/actuator/health/readiness
+              predicates:
+                - Method=GET
+                - Path=/api/health
             - id: payment
               uri: ${PAYMENT_URL:http://localhost:8081}
               predicates:
@@ -34,6 +40,15 @@ spring:
               metadata:
                 # SSE-поток живёт долго: общий response-timeout к нему не применяется
                 response-timeout: -1
+          # CORS для клиентов с другого origin. Фронтенд стенда ходит через nginx того же origin, но API
+          # доступно и напрямую: CORS_ALLOWED_ORIGINS — через запятую (локально и адрес фронтенда в Codespaces)
+          globalcors:
+            cors-configurations:
+              '[/api/**]':
+                allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+                allowed-methods: GET,POST,PUT,PATCH,DELETE
+                allowed-headers: Authorization,Content-Type,Accept,Idempotency-Key
+                max-age: 3600
           httpclient:
             connect-timeout: 2000
             response-timeout: 10s

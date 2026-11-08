@@ -1,5 +1,17 @@
 name: moby
 
+# Публичные адреса стенда. Локально — localhost; в Codespaces .devcontainer/start.sh вычисляет их из
+# CODESPACE_NAME и GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN и пишет в .env в корне репозитория.
+#   FRONTEND_PUBLIC_URL — origin фронтенда (CORS gateway, redirect URIs и web origins клиента Keycloak)
+#   KEYCLOAK_PUBLIC_URL — адрес Keycloak из браузера: hostname Keycloak и issuer токенов
+# Образы сервисов — из GitHub Container Registry (MOBY_IMAGES, MOBY_TAG); если образа нет — собираются из
+# исходников (секция build). Prometheus, Grafana и Jaeger — профиль observability, вместе с ним включается
+# экспорт трейсов: COMPOSE_PROFILES=observability TRACING_EXPORT_ENABLED=true docker compose up -d --wait
+
+x-urls:
+  frontend: &frontend-url ${FRONTEND_PUBLIC_URL:-http://localhost:5173}
+  issuer: &issuer ${KEYCLOAK_PUBLIC_URL:-http://localhost:${KEYCLOAK_PORT:-8180}}/realms/moby
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -51,7 +63,9 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       # Токены выпускаются с iss = адрес, по которому Keycloak видят браузер и smoke.sh
-      KC_HOSTNAME: http://localhost:${KEYCLOAK_PORT:-8180}
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL:-http://localhost:${KEYCLOAK_PORT:-8180}}
+      # Подставляются в realm при импорте (redirectUris, webOrigins клиента moby-frontend)
+      FRONTEND_PUBLIC_URL: *frontend-url
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HTTP_ENABLED: "true"
       KC_HEALTH_ENABLED: "true"
@@ -68,6 +82,7 @@ services:
       start_period: 30s
 
   payment:
+    image: ${MOBY_IMAGES:-ghcr.io/mike010111}/moby-payment:${MOBY_TAG:-latest}
     build: &service-build
       context: ..
       dockerfile: infra/docker/service.Dockerfile
@@ -77,57 +92,78 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       KAFKA_BOOTSTRAP: kafka:9092
-      JWT_ISSUER: http://localhost:${KEYCLOAK_PORT:-8180}/realms/moby
+      JWT_ISSUER: *issuer
       JWK_SET_URI: http://keycloak:8080/realms/moby/protocol/openid-connect/certs
       REWARDS_URL: http://rewards:8083
       PAYMENT_URL: http://payment:8081
       OTEL_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
+      # Экспорт трейсов — только вместе с профилем observability (иначе Jaeger нет и экспортёр сыпет ошибками)
+      MANAGEMENT_TRACING_EXPORT_ENABLED: ${TRACING_EXPORT_ENABLED:-false}
     depends_on: &service-deps
       postgres: { condition: service_healthy }
       kafka: { condition: service_healthy }
       keycloak: { condition: service_healthy }
+    ports:
+      # Swagger UI: http://localhost:8081/swagger-ui.html
+      - "127.0.0.1:${PAYMENT_PORT:-8081}:8081"
     mem_limit: 512m
     restart: unless-stopped
 
   family:
+    image: ${MOBY_IMAGES:-ghcr.io/mike010111}/moby-family:${MOBY_TAG:-latest}
     build:
       <<: *service-build
       args: { SERVICE: family, PORT: 8082 }
     environment: *service-env
     depends_on: *service-deps
+    ports:
+      # Swagger UI: http://localhost:8082/swagger-ui.html
+      - "127.0.0.1:${FAMILY_PORT:-8082}:8082"
     mem_limit: 512m
     restart: unless-stopped
 
   rewards:
+    image: ${MOBY_IMAGES:-ghcr.io/mike010111}/moby-rewards:${MOBY_TAG:-latest}
     build:
       <<: *service-build
       args: { SERVICE: rewards, PORT: 8083 }
     environment: *service-env
     depends_on: *service-deps
+    ports:
+      # Swagger UI: http://localhost:8083/swagger-ui.html
+      - "127.0.0.1:${REWARDS_PORT:-8083}:8083"
     mem_limit: 512m
     restart: unless-stopped
 
   notification:
+    image: ${MOBY_IMAGES:-ghcr.io/mike010111}/moby-notification:${MOBY_TAG:-latest}
     build:
       <<: *service-build
       args: { SERVICE: notification, PORT: 8084 }
     environment: *service-env
     depends_on: *service-deps
+    ports:
+      # Swagger UI: http://localhost:8084/swagger-ui.html
+      - "127.0.0.1:${NOTIFICATION_PORT:-8084}:8084"
     mem_limit: 512m
     restart: unless-stopped
 
   gateway:
+    image: ${MOBY_IMAGES:-ghcr.io/mike010111}/moby-gateway:${MOBY_TAG:-latest}
     build:
       <<: *service-build
       args: { SERVICE: gateway, PORT: 8080 }
     environment:
-      JWT_ISSUER: http://localhost:${KEYCLOAK_PORT:-8180}/realms/moby
+      JWT_ISSUER: *issuer
       JWK_SET_URI: http://keycloak:8080/realms/moby/protocol/openid-connect/certs
       PAYMENT_URL: http://payment:8081
       FAMILY_URL: http://family:8082
       REWARDS_URL: http://rewards:8083
       NOTIFICATION_URL: http://notification:8084
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,${FRONTEND_PUBLIC_URL:-http://localhost:5173}
       OTEL_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
+      # Экспорт трейсов — только вместе с профилем observability (иначе Jaeger нет и экспортёр сыпет ошибками)
+      MANAGEMENT_TRACING_EXPORT_ENABLED: ${TRACING_EXPORT_ENABLED:-false}
     ports:
       - "${GATEWAY_PORT:-8080}:8080"
     depends_on:
@@ -136,9 +172,14 @@ services:
     restart: unless-stopped
 
   frontend:
+    image: ${MOBY_IMAGES:-ghcr.io/mike010111}/moby-frontend:${MOBY_TAG:-latest}
     build:
       context: ..
       dockerfile: infra/docker/frontend.Dockerfile
+    environment:
+      # window.MOBY_CONFIG: API и Keycloak — через nginx того же origin (infra/frontend/nginx.conf)
+      MOBY_API_BASE_URL: .
+      MOBY_KEYCLOAK_URL: .
     ports:
       - "${FRONTEND_PORT:-5173}:80"
     depends_on:
@@ -146,6 +187,7 @@ services:
     restart: unless-stopped
 
   jaeger:
+    profiles: [observability]
     image: jaegertracing/jaeger:2.23.0
     ports:
       - "${JAEGER_PORT:-16686}:16686"
@@ -158,6 +200,7 @@ services:
     restart: unless-stopped
 
   prometheus:
+    profiles: [observability]
     image: prom/prometheus:v3.16.0
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -172,6 +215,7 @@ services:
     restart: unless-stopped
 
   grafana:
+    profiles: [observability]
     image: grafana/grafana:13.2.5
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"

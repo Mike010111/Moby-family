@@ -23,13 +23,11 @@
     <!-- Скрипты и картинки карты грузятся параллельно, без цепочки ожиданий -->
     <link rel="modulepreload" href="js/main.js" />
     <link rel="modulepreload" href="js/config.js" />
-    <link rel="modulepreload" href="js/core/actions.js" />
+    <link rel="modulepreload" href="js/core/api-store.js" />
     <link rel="modulepreload" href="js/core/artifacts.js" />
     <link rel="modulepreload" href="js/core/catalog.js" />
     <link rel="modulepreload" href="js/core/format.js" />
-    <link rel="modulepreload" href="js/core/initial-state.js" />
     <link rel="modulepreload" href="js/core/rules.js" />
-    <link rel="modulepreload" href="js/core/store.js" />
     <link rel="modulepreload" href="js/ui/artifact-art.js" />
     <link rel="modulepreload" href="js/ui/components.js" />
     <link rel="modulepreload" href="js/ui/dropdown.js" />
@@ -85,6 +83,7 @@
     </main>
 
     <noscript>Для работы прототипа нужен JavaScript (ES2022, модули).</noscript>
+    <script src="config.js"></script>
     <script type="module" src="js/main.js"></script>
   </body>
 </html>

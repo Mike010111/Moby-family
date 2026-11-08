@@ -1,5 +1,6 @@
 /**
  * Точка входа: связывает ApiStore (данные из бэкенда через gateway), окна ролей и оболочку стенда.
+ * Без бэкенда (GitHub Pages или gateway не ответил) — офлайн-демо: прототипный Store из spec/ в браузере.
  *
  *   ┌──────── ApiStore (снимок состояния из API) ───┐
  *   │ parent · relatives · children · requests ·   │
@@ -23,6 +24,7 @@ import { handleImageError } from './views/mascot.js';
 import { initShell, renderShell, roleFromHash } from './ui/shell.js';
 import { clock } from './core/format.js';
 import { imageUrls } from './core/artifacts.js';
+import { CONFIG } from './config.js';
 
 const views = { parent: parentView, kid: kidView, teen: teenView };
 const actionHandlers = Object.assign({}, ...Object.values(views).map((v) => v.actions));
@@ -32,10 +34,15 @@ const screen = document.getElementById('screen');
 const scroll = document.getElementById('screen-scroll');
 const store = await connect();
 
-/** Вход под демо-пользователем вкладки из адреса (#parent | #kid | #teen) и загрузка его данных. */
+/**
+ * Вход под демо-пользователем вкладки из адреса (#parent | #kid | #teen) и загрузка его данных.
+ * Адрес бэкенда не задан или health не ответил — офлайн-демо с той же разметкой и сценариями.
+ */
 async function connect() {
+  const role = roleFromHash() ?? 'parent';
+  if (!(await backendAvailable())) return offline(role);
   try {
-    return await ApiStore.connect(roleFromHash() ?? 'parent');
+    return await ApiStore.connect(role);
   } catch (e) {
     console.error(e);
     scroll.innerHTML = `<div class="app"><section class="section card"><div class="card__body">
@@ -43,6 +50,34 @@ async function connect() {
       <p class="small muted">Запустите стенд: <code>docker compose up -d</code> и обновите страницу.</p></div></section></div>`;
     throw e;
   }
+}
+
+async function backendAvailable() {
+  if (!CONFIG.BACKEND) return false;
+  try {
+    const res = await fetch(`${CONFIG.API_BASE}/api/health`, { signal: AbortSignal.timeout(CONFIG.HEALTH_TIMEOUT_MS) });
+    return res.ok && (await res.json()).status === 'UP';
+  } catch {
+    return false;
+  }
+}
+
+async function offline(role) {
+  const { createOfflineStore } = await import('./core/offline-store.js');
+  showOfflineNote();
+  return createOfflineStore(role);
+}
+
+/** Плашка офлайн-режима; на GitHub Pages ссылка ведёт на README репозитория. */
+function showOfflineNote() {
+  const [owner] = location.hostname.endsWith('.github.io') ? location.hostname.split('.') : [];
+  const repo = location.pathname.split('/').filter(Boolean)[0];
+  const readme = owner && repo ? `<a href="https://github.com/${owner}/${repo}#readme" target="_blank" rel="noopener">README</a>` : 'README';
+  const note = document.createElement('p');
+  note.className = 'offline-note';
+  note.setAttribute('role', 'status');
+  note.innerHTML = `Офлайн-демо: логика в браузере. Настоящий бэкенд — по кнопке Codespaces в ${readme}`;
+  document.querySelector('.stage').append(note);
 }
 let currentRole = null;
 

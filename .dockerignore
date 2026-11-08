@@ -8,6 +8,5 @@ infra/keycloak
 infra/postgres
 infra/prometheus
 infra/grafana
-frontend/spec
 frontend/node_modules
 **/*.md

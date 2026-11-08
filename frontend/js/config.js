@@ -1,14 +1,21 @@
 /**
  * Конфигурация прототипа. Меняется без правки компонентов.
+ * Адреса бэкенда приходят из config.js в корне фронтенда (window.MOBY_CONFIG).
  */
-const KEYCLOAK = `${location.protocol}//${location.hostname}:8180`;
+const RUNTIME = globalThis.MOBY_CONFIG ?? {};
+const API_BASE = (RUNTIME.apiBaseUrl ?? '').replace(/\/+$/, '');
+const KEYCLOAK = (RUNTIME.keycloakUrl ?? '').replace(/\/+$/, '') || `${location.protocol}//${location.hostname}:8180`;
 
 export const CONFIG = Object.freeze({
   /** Длительность симуляции сканирования QR, мс. */
   SCAN_DURATION_MS: 1100,
 
-  /** API идёт через тот же origin: nginx проксирует /api на gateway. */
-  API_BASE: '',
+  /** Адрес бэкенда задан; иначе — офлайн-демо (логика из spec/ в браузере). */
+  BACKEND: Boolean(RUNTIME.apiBaseUrl),
+  /** База для /api ('.' — тот же origin). */
+  API_BASE,
+  /** Бэкенд считается недоступным, если health через gateway не ответил за это время, мс. */
+  HEALTH_TIMEOUT_MS: 3000,
   /** Keycloak realm и публичный клиент стенда. */
   TOKEN_URL: `${KEYCLOAK}/realms/moby/protocol/openid-connect/token`,
   CLIENT_ID: 'moby-frontend',

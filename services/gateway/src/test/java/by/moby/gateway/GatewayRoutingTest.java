@@ -83,6 +83,33 @@ class GatewayRoutingTest {
     }
 
     @Test
+    @DisplayName("Health для фронтенда — через gateway, без токена и без обращения к сервисам")
+    void healthForFrontend() {
+        lastPath.set(null);
+        web.get().uri("/api/health").exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath("$.status").isEqualTo("UP");
+        assertThat(lastPath.get()).isNull();
+    }
+
+    @Test
+    @DisplayName("CORS: preflight с разрешённого origin проходит, с чужого — 403")
+    void corsPreflight() {
+        web.options().uri("http://gateway.local/api/family/me")
+                .header("Origin", "http://localhost:5173")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "authorization,idempotency-key")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().valueEquals("Access-Control-Allow-Origin", "http://localhost:5173");
+        web.options().uri("http://gateway.local/api/family/me")
+                .header("Origin", "https://evil.example")
+                .header("Access-Control-Request-Method", "POST")
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
     @DisplayName("Неизвестный путь закрыт, health открыт")
     void unknownPathsDenied() {
         web.mutateWith(mockJwt()).get().uri("/internal/anything").exchange().expectStatus().isForbidden();

@@ -68,7 +68,7 @@
     пользователь, healthcheck по `/actuator/health/readiness`. Лимит памяти 512 МБ, SerialGC — стенд должен
     помещаться на ноутбуке рядом с Keycloak и Kafka.
 23. **Фронтенд за nginx на :5173**, `/api` проксируется на gateway (один origin, без CORS для API); Keycloak — на
-    :8180 напрямую (CORS через `webOrigins` клиента). SSE-локация без буферизации, таймаут чтения 1 ч.
+    :8180 напрямую (CORS через `webOrigins` клиента); с п. 33 вход тоже идёт через nginx (`/realms`). SSE-локация без буферизации, таймаут чтения 1 ч.
 24. **Сборка — Maven** (ADR-009). `groupId` — `by.moby`, `artifactId` — имя модуля (`common`, `payment`, …), версия
     `1.0.0-SNAPSHOT`; исполняемый jar сервиса — `target/app.jar` (`<finalName>`), как прежний `bootJar` `app.jar`.
 25. **Только surefire, без failsafe.** В Gradle все тесты, включая интеграционные на Testcontainers, шли одной
@@ -89,3 +89,37 @@
 29. **Число тестов — 115.** В отчёте этапа 7 было указано 119 — это ошибка подсчёта: JUnit-отчёты Gradle
     (`build/test-results`) и Maven (surefire) одинаково дают 115 (common 4, gateway 3, payment 44, family 33,
     rewards 18, notification 13).
+30. **Офлайн-режим фронтенда — те же файлы `spec/`** (ADR-010). `frontend/config.js` — обычный скрипт с
+    `window.MOBY_CONFIG = { apiBaseUrl, keycloakUrl }`; в репозитории пусто (это и есть версия для GitHub Pages),
+    образ фронтенда перезаписывает файл при старте контейнера (`infra/frontend/40-moby-config.sh`) значением `.` —
+    тот же origin, «как раньше». Проверка доступности — `GET /api/health` через gateway с таймаутом 3 с при
+    загрузке страницы; если бэкенд отвалится позже, страница остаётся в онлайн-режиме и переподключается
+    (SSE каждые 3 с), а не переключается молча на локальные данные.
+31. **`/api/health` — маршрут gateway** (`forward:/actuator/health/readiness`, без токена), а не nginx: так
+    проверка работает при любом `apiBaseUrl`, в том числе если фронтенд смотрит на gateway напрямую.
+32. **Плашка офлайн-режима** — один элемент, добавляемый скриптом (`.offline-note`, токены дизайна): разметка
+    `index.html` и экраны не меняются. На `*.github.io` слово «README» — ссылка на репозиторий, адрес выводится
+    из URL страницы.
+33. **Вход и API через nginx того же origin** (`/realms` → Keycloak, `/api` → gateway). В Codespaces порты
+    приватные и cross-origin запрос к другому порту не проходит авторизацию GitHub; прокси снимает вопрос CORS и
+    видимости портов. Issuer токена от этого не зависит — его фиксирует `KC_HOSTNAME`.
+34. **nginx резолвит upstream при каждом запросе** (`resolver 127.0.0.11`, переменные в `proxy_pass`): после
+    `docker compose restart gateway` фронтенд продолжает работать, даже если у контейнера сменился IP.
+35. **Адреса Codespaces → `.env`.** `.devcontainer/start.sh` вычисляет `FRONTEND_PUBLIC_URL` и
+    `KEYCLOAK_PUBLIC_URL` из `CODESPACE_NAME` и `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`, compose подставляет их в
+    `KC_HOSTNAME`, `JWT_ISSUER`, `CORS_ALLOWED_ORIGINS`, а Keycloak — в realm при импорте (`${FRONTEND_PUBLIC_URL}`
+    в `redirectUris`/`webOrigins`). `.env` в `.gitignore`; без него — localhost, локальный запуск не меняется.
+36. **Swagger UI — на портах сервисов** (8081–8084, только `127.0.0.1`): у каждого сервиса свой OpenAPI, а
+    агрегатор документации в gateway — лишняя зависимость ради демо. В Codespaces порты подписаны «Swagger: …».
+37. **Наблюдаемость — профиль `observability`**, базовый стенд — 9 контейнеров. Финальная проверка и CI поднимают
+    базовый стенд. Одна команда `COMPOSE_PROFILES=observability TRACING_EXPORT_ENABLED=true docker compose up -d
+    --wait` добавляет Prometheus, Grafana и Jaeger и включает экспорт трейсов: compose не умеет вывести значение
+    переменной из активного профиля, а пустое значение Spring не считает выключением.
+38. **Образы GHCR: `latest` и полный SHA коммита**, только `linux/amd64`. Имя владельца в compose по умолчанию —
+    `ghcr.io/mike010111` (`MOBY_IMAGES` переопределяет; в Codespaces берётся из `GITHUB_REPOSITORY`).
+39. **Бейдж покрытия без внешнего сервиса.** `pages.yml` прогоняет `./mvnw verify`, суммирует строки JaCoCo по
+    сервисам и публикует `badges/coverage.json` (формат endpoint shields.io) рядом с сайтом. Если тесты красные —
+    бейдж «failing», а сайт всё равно публикуется.
+40. **Playwright — devDependency фронтенда** (`npm run test:e2e`, CI job `frontend-offline`): требование проверить
+    офлайн-режим в браузере. Тест раздаёт корень репозитория `python3 -m http.server` и открывает `/frontend/` —
+    как подпуть `<repo>/` на Pages, поэтому ловит и абсолютные пути.

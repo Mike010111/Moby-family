@@ -42,12 +42,27 @@
   `dependency:list` по runtime и test), MapStruct в `annotationProcessorPaths`, surefire, JaCoCo 80 % на `verify`,
   Maven Wrapper. Файлы Gradle удалены; Dockerfile, CI, README, ADR и docs обновлены. ADR-009.
 
+- **Этап 9. Витрина.** Офлайн-демо фронтенда (`frontend/config.js` → `window.MOBY_CONFIG`; без адреса API или
+  если `/api/health` через gateway не ответил за 3 с — логика `spec/` в браузере с плашкой режима, «Сбросить
+  демо» сбрасывает локальное состояние), все пути относительные; Playwright-тест офлайн-режима. Workflow
+  `pages.yml` (Pages + бейдж покрытия), `images.yml` (GHCR, теги `latest` и SHA); в compose `image` из ghcr.io и
+  `build` как запасной вариант. Codespaces: `.devcontainer` (docker-in-docker, 4 ядра / 16 ГБ, порты с
+  подписями, фронтенд открывается сам), адреса из переменных Codespaces → `.env` → `KC_HOSTNAME`, issuer,
+  CORS gateway, redirect URIs и web origins Keycloak; вход и API через nginx того же origin. Наблюдаемость —
+  профиль `observability`. В gateway — `/api/health` и CORS (+2 теста). README-витрина, заглушки `docs/media`.
+  ADR-010.
+
 ## Финальная проверка (2026-11-08)
 
 | Проверка | Результат |
 |---|---|
-| `./mvnw clean verify` | зелёный: 115 JUnit-тестов (до перехода на Maven — те же 115, см. DECISIONS п. 29), 0 падений, ArchUnit, Modulith verify, JaCoCo ≥ 80 % (строки: payment 89 %, family 89 %, rewards 86 %, notification 84 %, gateway 87 %) |
-| `docker compose up -d` | 12 контейнеров healthy: postgres, kafka, keycloak, payment, family, rewards, notification, gateway, frontend, prometheus, grafana, jaeger |
+| `./mvnw clean verify` | зелёный: 117 JUnit-тестов — 115 после перехода на Maven (столько же, сколько в Gradle, см. DECISIONS п. 29) и 2 новых в gateway (health, CORS); 0 падений, ArchUnit, Modulith verify, JaCoCo ≥ 80 % (строки: payment 89 %, family 89 %, rewards 86 %, notification 84 %, gateway 88 %). Файлов Gradle в репозитории нет |
+| `docker compose build --no-cache` | зелёный (этап 8: сборка Maven внутри Docker), затем `up --wait` и smoke.sh зелёные |
+| `docker compose up -d --wait` | 9 контейнеров healthy: postgres, kafka, keycloak, payment, family, rewards, notification, gateway, frontend; с профилем `observability` — 12 (+ prometheus, grafana, jaeger; трейсы всех 5 сервисов в Jaeger, все цели Prometheus up) |
+| `docker compose restart gateway` | фронтенд продолжает работать: вход, загрузка ролей, запрос → одобрение, «Сбросить демо» (Playwright против стенда) |
+| Codespaces-адреса (имитация через `.env`) | redirect URIs и web origins клиента Keycloak, issuer токена, CORS gateway — по адресам `https://<codespace>-<port>.app.github.dev`; smoke.sh зелёный |
+| Офлайн-режим | `npm run test:e2e` (Playwright, статика `python3 -m http.server`, подпуть `/frontend/`): три роли, запрос → одобрение → балансы, «Сбросить демо», ни одного запроса к `/api` и `/realms` — 3 / 3 |
+| Workflow-файлы | `actionlint` — без замечаний |
 | `scripts/smoke.sh` | все шаги пройдены: вход, права 200/403/401, «5 BYN на обед» → одобрение → балансы и уведомление, игровые автоматы → HARD_BLOCK, P2P Ивана 35 BYN → NEEDS_APPROVAL → запрос → одобрение → перевод, артефакт → кэшбэк 5 % при оплате по QR |
 | `cd frontend && npm test` | 25 / 25 сценариев прототипа |
 | Фронтенд против стенда | `ApiStore` + рендер `parentView/kidView/teenView`: 25 проверок пройдены |
@@ -94,4 +109,8 @@
 - Трейс отправки события из outbox не связан с исходным HTTP-трейсом (ADR-008).
 - Цикл недель магазина артефактов не моделируется (как в прототипе — неделя «в руках»).
 - Первая сборка образов — несколько минут (Maven внутри Docker скачивает зависимости); дальше кэш `~/.m2`.
-- Фронтенд проверен прогоном слоя данных и рендером экранов против живого стенда, без ручного прокликивания в браузере.
+- Фронтенд проверен Playwright-сценариями (онлайн против стенда и офлайн), ручного прокликивания всех экранов не было.
+- Codespaces проверен имитацией адресов локально; в настоящем codespace стенд не поднимался (нужен push в GitHub).
+- Офлайн-демо — реализация прототипа из `spec/`, она может расходиться с бэкендом в деталях из DECISIONS
+  (например, порядок проверок копилки, п. 16).
+- Образы GHCR — только `linux/amd64`; на Apple Silicon compose соберёт образы локально.

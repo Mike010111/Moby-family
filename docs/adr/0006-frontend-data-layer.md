@@ -25,6 +25,8 @@
 * «Сбросить демо» вызывает `POST /api/<service>/demo/reset` во всех сервисах (только профиль demo).
 * Прежние `actions.js`, `store.js`, `initial-state.js` и `store.test.js` перенесены в `frontend/spec/` как
   исполняемая спецификация (CI: `npm test`).
+* Без бэкенда (пустой `apiBaseUrl` в `config.js` или gateway не ответил на `/api/health` за 3 с) те же файлы
+  `spec/` работают в браузере — офлайн-демо для GitHub Pages (ADR-010). Интерфейс store у обоих режимов один.
 
 ## Альтернативы
 

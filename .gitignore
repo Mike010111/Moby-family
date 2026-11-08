@@ -8,3 +8,5 @@ node_modules/
 .bloop/
 .vscode/
 .DS_Store
+test-results/
+playwright-report/

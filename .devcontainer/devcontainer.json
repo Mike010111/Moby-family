@@ -1,0 +1,32 @@
+{
+  "name": "Moby Family",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/java:1": { "version": "21", "jdkDistro": "tem", "installMaven": "false" }
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb"
+  },
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "forwardPorts": [5173, 8080, 8180, 8081, 8082, 8083, 8084, 3000, 16686, 9090],
+  "portsAttributes": {
+    "5173": { "label": "Фронтенд (стенд для жюри)", "onAutoForward": "openBrowser" },
+    "8080": { "label": "API Gateway", "onAutoForward": "silent" },
+    "8180": { "label": "Keycloak (admin / admin)", "onAutoForward": "silent" },
+    "8081": { "label": "Swagger: payment", "onAutoForward": "silent" },
+    "8082": { "label": "Swagger: family", "onAutoForward": "silent" },
+    "8083": { "label": "Swagger: rewards", "onAutoForward": "silent" },
+    "8084": { "label": "Swagger: notification", "onAutoForward": "silent" },
+    "3000": { "label": "Grafana (профиль observability)", "onAutoForward": "silent" },
+    "16686": { "label": "Jaeger (профиль observability)", "onAutoForward": "silent" },
+    "9090": { "label": "Prometheus (профиль observability)", "onAutoForward": "silent" }
+  },
+  "otherPortsAttributes": { "onAutoForward": "ignore" },
+  "customizations": {
+    "codespaces": {
+      "openFiles": ["README.md"]
+    }
+  }
+}

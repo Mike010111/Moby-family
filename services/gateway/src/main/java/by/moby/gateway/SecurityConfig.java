@@ -11,6 +11,8 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
  * Gateway — первая линия: без валидного JWT Keycloak (подпись, срок, issuer) запрос до сервисов не доходит.
  * Права на конкретные ресурсы проверяют сами сервисы (они знают, чей это ребёнок); токен передаётся дальше
  * в заголовке Authorization без изменений.
+ *
+ * CORS (globalcors в application.yml) — для клиентов с другого origin; preflight (OPTIONS) пропускается без токена.
  */
 @Configuration(proxyBeanMethods = false)
 @EnableWebFluxSecurity
@@ -25,6 +27,7 @@ class SecurityConfig {
                 .authorizeExchange(ex -> ex
                         .pathMatchers(HttpMethod.OPTIONS).permitAll()
                         .pathMatchers("/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .pathMatchers("/api/**").authenticated()
                         .anyExchange().denyAll())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> { }))

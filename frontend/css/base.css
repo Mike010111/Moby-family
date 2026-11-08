@@ -403,3 +403,33 @@ ol {
     transition-duration: 1ms !important;
   }
 }
+
+/* Плашка офлайн-демо (GitHub Pages или бэкенд не ответил) — поверх стенда, не сдвигает разметку */
+.offline-note {
+  position: fixed;
+  left: 50%;
+  bottom: 12px;
+  z-index: var(--z-jury);
+  transform: translateX(-50%);
+  max-width: calc(100vw - 24px);
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  background: var(--mt-blue-950);
+  color: var(--mt-white);
+  font: 500 var(--fs-12) / 1.4 var(--font-ui);
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(10, 15, 61, 0.25);
+}
+
+.offline-note a {
+  color: var(--mt-sky);
+}
+
+@media (max-width: 560px) {
+  .offline-note {
+    top: calc(var(--jury-h) + 6px);
+    bottom: auto;
+    font-size: var(--fs-11);
+  }
+}
