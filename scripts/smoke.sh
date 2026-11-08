@@ -101,7 +101,7 @@ I0=$(balance "$IVAN" ivan)
 call "$IVAN" POST /api/payment/children/ivan/p2p-transfers '{"contactId":"c-katya","amount":"35"}'
 expect_status 201 "перевод"; expect_eq "$(json mode)" APPROVED "режим перевода"
 money_eq "$(balance "$IVAN" ivan)" "$(add "$I0" -35)" "баланс Ивана"
-call "$IVAN" GET "/api/payment/children/ivan/p2p/quote?amount=35"; expect_eq "$(json mode)" REQUEST "одобрение разовое"
+call "$IVAN" GET "/api/payment/children/ivan/p2p/quote?amount=20"; expect_eq "$(json mode)" REQUEST "одобрение разовое"
 pass "перевод выполнен по одобрению: Иван $I0 → $(balance "$IVAN" ivan) BYN; одобрение израсходовано"
 
 step "4. Покупка артефакта → кэшбэк при оплате по QR"
