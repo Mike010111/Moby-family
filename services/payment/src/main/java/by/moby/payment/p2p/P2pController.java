@@ -39,8 +39,9 @@ class P2pController {
     }
 
     @GetMapping("/children/{childId}/p2p/quote")
-    P2pQuote quote(@PathVariable String childId, @RequestParam(required = false) String amount) {
-        return p2p.quote(childId, amount);
+    P2pQuote quote(@PathVariable String childId, @RequestParam(required = false) String amount,
+                   @RequestParam(required = false) String contactId) {
+        return p2p.quote(childId, amount, contactId);
     }
 
     /** {@code p2p/send}: только сам подросток. REQUEST → 422 NEEDS_APPROVAL, BLOCKED → код причины. */

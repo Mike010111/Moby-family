@@ -59,9 +59,10 @@ public class P2pService {
     }
 
     @Transactional(readOnly = true)
-    public P2pQuote quote(String childId, String rawAmount) {
+    public P2pQuote quote(String childId, String rawAmount, String contactId) {
         Account child = accounts.readableChild(childId);
-        return quote(child, Money.parse(rawAmount).orElse(null));
+        P2pQuote quote = quote(child, Money.parse(rawAmount).orElse(null));
+        return contactId == null ? quote : quote.withContact(DemoCatalog.contact(contactId).map(Contact::name).orElse(null));
     }
 
     /** Порт {@code quoteP2P}; {@code amount == null} — сумма не распознана. */
@@ -88,16 +89,16 @@ public class P2pService {
 
         if (withinLimit) {
             return child.hasFunds(amount)
-                    ? new P2pQuote(P2pQuote.Mode.SEND, true, null, null, remaining, limitName, approvalMax, balance)
+                    ? new P2pQuote(P2pQuote.Mode.SEND, true, null, null, remaining, limitName, approvalMax, balance, null)
                     : P2pQuote.blocked(ErrorCode.FUNDS, "Недостаточно средств", balance);
         }
         if (approval.isPresent() && approval.get().covers(amount)) {
             return child.hasFunds(amount)
-                    ? new P2pQuote(P2pQuote.Mode.APPROVED, true, null, null, remaining, limitName, approvalMax, balance)
+                    ? new P2pQuote(P2pQuote.Mode.APPROVED, true, null, null, remaining, limitName, approvalMax, balance, null)
                     : P2pQuote.blocked(ErrorCode.FUNDS, "Недостаточно средств", balance);
         }
         return new P2pQuote(P2pQuote.Mode.REQUEST, false, ErrorCode.NEEDS_APPROVAL,
-                "Сумма выше лимита: доступно " + remaining.format(), remaining, limitName, approvalMax, balance);
+                "Сумма выше лимита: доступно " + remaining.format(), remaining, limitName, approvalMax, balance, null);
     }
 
     @Transactional

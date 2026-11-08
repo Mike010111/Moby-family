@@ -1,0 +1,14 @@
+moby:
+  clients:
+    payment:
+      url: http://localhost:1
+
+spring:
+  modulith:
+    events:
+      externalization:
+        enabled: false
+
+logging:
+  level:
+    org.springframework.modulith: warn
