@@ -80,6 +80,10 @@ public class P2pService {
         if (amount == null || !amount.isPositive()) {
             return P2pQuote.blocked(ErrorCode.AMOUNT, "Укажите сумму — не больше двух знаков после запятой", balance);
         }
+        // Нехватка денег — раньше лимита: просить одобрение на сумму больше баланса бессмысленно
+        if (!child.hasFunds(amount)) {
+            return P2pQuote.blocked(ErrorCode.FUNDS, "Недостаточно средств", balance);
+        }
         Optional<LimitMath.Tight> tight = limits.tightest(child, new LimitMath.Spend(Categories.P2P_MCC, false, amount));
         Money remaining = tight.map(t -> t.usage().remaining()).orElse(null);
         String limitName = tight.map(t -> limits.name(t.limit())).orElse(null);
@@ -88,14 +92,10 @@ public class P2pService {
         Money approvalMax = approval.map(P2pApproval::getMaxAmount).orElse(null);
 
         if (withinLimit) {
-            return child.hasFunds(amount)
-                    ? new P2pQuote(P2pQuote.Mode.SEND, true, null, null, remaining, limitName, approvalMax, balance, null)
-                    : P2pQuote.blocked(ErrorCode.FUNDS, "Недостаточно средств", balance);
+            return new P2pQuote(P2pQuote.Mode.SEND, true, null, null, remaining, limitName, approvalMax, balance, null);
         }
         if (approval.isPresent() && approval.get().covers(amount)) {
-            return child.hasFunds(amount)
-                    ? new P2pQuote(P2pQuote.Mode.APPROVED, true, null, null, remaining, limitName, approvalMax, balance, null)
-                    : P2pQuote.blocked(ErrorCode.FUNDS, "Недостаточно средств", balance);
+            return new P2pQuote(P2pQuote.Mode.APPROVED, true, null, null, remaining, limitName, approvalMax, balance, null);
         }
         return new P2pQuote(P2pQuote.Mode.REQUEST, false, ErrorCode.NEEDS_APPROVAL,
                 "Сумма выше лимита: доступно " + remaining.format(), remaining, limitName, approvalMax, balance, null);

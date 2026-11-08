@@ -107,9 +107,10 @@ export function toast(text, tone = 'ok') {
 /* ───────────── QR-сканер КРОК ───────────── */
 /**
  * Симуляция камеры: выбор демо-QR → «сканирование» → подтверждение → результат.
- * @param {{merchants: object[], legalNote?: string, balanceText: string, onPay: (m: object) => object | Promise<object>, onDone?: Function}} cfg
+ * @param {{merchants: object[], legalNote?: string, available: () => string, onPay: (m: object) => object | Promise<object>, onDone?: Function}} cfg
+ *   available — «Доступно» в шапке; функция, чтобы после оплаты и «Другой QR» сумма была актуальной
  */
-export function openScanner({ merchants, legalNote, balanceText, onPay, onDone }) {
+export function openScanner({ merchants, legalNote, available, onPay, onDone }) {
   closeOverlay();
   const wrap = document.createElement('div');
   wrap.className = 'scanner';
@@ -130,7 +131,7 @@ export function openScanner({ merchants, legalNote, balanceText, onPay, onDone }
     wrap.classList.remove('is-scanning');
     wrap.innerHTML = `
       <div class="scanner__top"><div><div class="scanner__title">Оплата по QR · КРОК</div>
-        <div class="tiny muted">Доступно: ${esc(balanceText)}</div></div>
+        <div class="tiny muted">Доступно: ${esc(available())}</div></div>
         <button class="scanner__close" data-scan="close" aria-label="Закрыть сканер">${icon('x')}</button></div>
       <div class="scanner__frame" aria-hidden="true">
         <span class="scanner__corner scanner__corner--tl"></span><span class="scanner__corner scanner__corner--tr"></span>

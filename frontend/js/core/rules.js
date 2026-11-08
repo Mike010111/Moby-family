@@ -62,7 +62,11 @@ export const openCategories = (child) => categoriesFor(child).filter((c) => chil
 
 /* ───────────── Деньги ───────────── */
 
-export const round2 = (n) => Math.round(n * 100) / 100;
+/**
+ * Округление до копеек HALF_UP, как BigDecimal на бэкенде. Сдвиг на 1e-7 копейки снимает ошибку двоичной
+ * записи: 0.3 * 5 / 100 = 0.01499999… → 0,02 BYN, а не 0,01.
+ */
+export const round2 = (n) => (Math.sign(n) * Math.round(Math.abs(n) * 100 + 1e-7)) / 100;
 
 /** Сумма: положительное число, не больше двух знаков после запятой. Принимает и «5,25». */
 export function parseMoney(raw) {
@@ -179,6 +183,19 @@ export function limitUsage(child, limit, now = Date.now()) {
   };
 }
 
+/**
+ * Сколько можно потратить прямо сейчас на любую покупку: баланс, урезанный остатком лимитов на все категории.
+ * Именно эта сумма — «Доступно» в сканере QR: оплата в её пределах не упрётся ни в баланс, ни в общий лимит.
+ */
+export function spendable(child, now = Date.now()) {
+  if (child.card.frozen) return 0;
+  let max = child.balance;
+  for (const limit of child.limits) {
+    if (!limit.categories.length) max = Math.min(max, limitUsage(child, limit, now).remaining);
+  }
+  return round2(Math.max(0, max));
+}
+
 /** Самый жёсткий из лимитов, под которые попадает будущая операция. */
 export function tightestLimit(child, op, now = Date.now()) {
   let best = null;
@@ -284,17 +301,15 @@ export function quoteP2P(child, amount, now = Date.now()) {
   if (!COHORTS[child.cohort].p2pAllowed) return { mode: 'blocked', ...deny('AGE', 'Переводы доступны с 14 лет') };
   if (!child.allow.p2p) return { mode: 'blocked', ...deny('PARENT_P2P', 'Переводы запрещены') };
   if (!(amount > 0)) return { mode: 'blocked', ...deny('AMOUNT', 'Укажите сумму — не больше двух знаков после запятой') };
+  // Нехватка денег — раньше лимита: просить одобрение на сумму больше баланса бессмысленно
+  if (amount > child.balance) return { mode: 'blocked', ...deny('FUNDS', 'Недостаточно средств') };
 
   const tight = tightestLimit(child, { mcc: '4829', amount }, now);
   const withinLimit = !tight || amount <= tight.usage.remaining;
   const approval = activeApproval(child);
 
-  if (withinLimit) {
-    return amount > child.balance ? { mode: 'blocked', ...deny('FUNDS', 'Недостаточно средств') } : { mode: 'send', ok: true, tight };
-  }
-  if (approval && amount <= approval.max) {
-    return amount > child.balance ? { mode: 'blocked', ...deny('FUNDS', 'Недостаточно средств') } : { mode: 'approved', ok: true, tight, approval };
-  }
+  if (withinLimit) return { mode: 'send', ok: true, tight };
+  if (approval && amount <= approval.max) return { mode: 'approved', ok: true, tight, approval };
   return { mode: 'request', ok: false, code: 'NEEDS_APPROVAL', tight, approval, reason: `Сумма выше лимита: доступно ${money(tight.usage.remaining)}` };
 }
 

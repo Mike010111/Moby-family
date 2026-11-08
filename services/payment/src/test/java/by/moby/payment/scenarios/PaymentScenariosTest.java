@@ -126,6 +126,8 @@ class PaymentScenariosTest extends PaymentIntegrationTest {
         quote("10").andExpect(jsonPath("$.mode").value("SEND"));
         quote("35").andExpect(jsonPath("$.mode").value("REQUEST")).andExpect(jsonPath("$.code").value("NEEDS_APPROVAL"))
                 .andExpect(jsonPath("$.reason").value("Сумма выше лимита: доступно 24,50 BYN"));
+        // больше баланса (64,20) — сразу «недостаточно средств», а не запрос одобрения сверх лимита
+        quote("100").andExpect(jsonPath("$.mode").value("BLOCKED")).andExpect(jsonPath("$.code").value("FUNDS"));
         send("35").andExpect(jsonPath("$.code").value("NEEDS_APPROVAL")).andExpect(jsonPath("$.mode").value("REQUEST"));
 
         postAs(anna(), "/api/payment/internal/children/ivan/p2p-approvals", "{\"requestId\":\"r-1\",\"max\":35}")

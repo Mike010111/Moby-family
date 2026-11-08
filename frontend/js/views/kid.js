@@ -7,7 +7,7 @@ import { icon } from '../ui/icons.js';
 import { card, emptyState, txList } from '../ui/components.js';
 import { openScanner, toast } from '../ui/overlay.js';
 import { esc, money } from '../core/format.js';
-import { HARD_BLOCKS, categoriesFor } from '../core/rules.js';
+import { HARD_BLOCKS, categoriesFor, spendable } from '../core/rules.js';
 import { LESSONS, QR_MERCHANTS } from '../core/catalog.js';
 import { mascotActions, mascotCard } from './mascot.js';
 import { childHeader, mainRelative, myLimitsCard, openAskMoney, piggyActions, piggyCard, requestStatus, submitPiggy } from './shared.js';
@@ -53,10 +53,9 @@ export const kidView = {
     'kid/askMoney': ({ store }) => openAskMoney(store, CHILD_ID),
     'kid/openQr': ({ store }) => {
       const state = store.getState();
-      const c = state.children[CHILD_ID];
       openScanner({
         merchants: QR_MERCHANTS.junior,
-        balanceText: money(c.balance),
+        available: () => money(spendable(store.getState().children[CHILD_ID])),
         legalNote: `Мелкая бытовая сделка: ребёнок до 14 лет вправе совершать её самостоятельно (ст. 27 ГК РБ). ${mainRelative(state).label} увидит покупку сразу.`,
         onPay: (m) => store.dispatch('pay/qr', { childId: CHILD_ID, merchantId: m.id }),
       });

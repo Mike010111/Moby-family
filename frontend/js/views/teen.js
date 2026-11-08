@@ -7,7 +7,7 @@ import { icon } from '../ui/icons.js';
 import { card, dropdown, emptyState, moneyAttrs, progress, switchBtn, txList } from '../ui/components.js';
 import { openScanner, openSheet, toast } from '../ui/overlay.js';
 import { esc, int, money, pct, plural } from '../core/format.js';
-import { groupLabel, groupOf, limitCategoriesLabel, parseMoney, periodTitle, quoteP2P, round2 } from '../core/rules.js';
+import { groupLabel, groupOf, limitCategoriesLabel, parseMoney, periodTitle, quoteP2P, round2, spendable } from '../core/rules.js';
 import { CONTACTS, QR_MERCHANTS } from '../core/catalog.js';
 import { mascotActions, mascotCard } from './mascot.js';
 import { childHeader, mainRelative, myLimitsCard, openAskMoney, piggyActions, piggyCard, requestStatus, submitPiggy } from './shared.js';
@@ -56,10 +56,9 @@ export const teenView = {
     'teen/p2p': ({ store }) => openP2P(store),
     'teen/ask': ({ store }) => openAskMoney(store, CHILD_ID, { amount: '10', reason: 'На кружок' }),
     'teen/qr': ({ store }) => {
-      const c = store.getState().children[CHILD_ID];
       openScanner({
         merchants: QR_MERCHANTS.teen,
-        balanceText: money(c.balance),
+        available: () => money(spendable(store.getState().children[CHILD_ID])),
         onPay: (m) => store.dispatch('pay/qr', { childId: CHILD_ID, merchantId: m.id }),
       });
     },
