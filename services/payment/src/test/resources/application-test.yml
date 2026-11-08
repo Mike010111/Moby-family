@@ -1,0 +1,16 @@
+moby:
+  autopay:
+    enabled: false
+  clients:
+    rewards:
+      url: http://localhost:1
+
+spring:
+  modulith:
+    events:
+      externalization:
+        enabled: false
+
+logging:
+  level:
+    org.springframework.modulith: warn
