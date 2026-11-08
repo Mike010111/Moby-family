@@ -1,0 +1,3 @@
+# Точка входа для `docker compose up -d` из корня репозитория; вся конфигурация — в infra/.
+include:
+  - infra/docker-compose.yml

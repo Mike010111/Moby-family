@@ -1,1 +1,9 @@
 .DS_Store
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.idea/
+*.iml
+out/
+node_modules/
+.env
