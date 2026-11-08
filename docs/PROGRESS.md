@@ -1,7 +1,7 @@
 # Прогресс
 
 ## Сделано
-- **Этап 1.** Gradle multi-module (Kotlin DSL, version catalog, convention-плагины в `build-logic`), фронт перенесён
+- **Этап 1.** Multi-module сборка (тогда — Gradle Kotlin DSL, с этапа 8 — Maven), фронт перенесён
   в `/frontend`, `infra/docker-compose.yml` с Postgres (отдельная БД и пользователь на сервис), CI, ADR-001.
 - **Этап 2. payment.** Money, счета, ledger двойной записи со сверкой, категории/MCC и хард-блоки, лимиты с
   календарными периодами и иерархией, `checkPayment`, QR-оплата с кэшбэком, P2P с котировкой
@@ -37,11 +37,16 @@
   gateway → family → payment, Kafka → консьюмеры), JaCoCo с порогом 80 % строк, ArchUnit (слои, DTO, Clock,
   без field injection, без double), README со схемой, ADR-007/008, CI-job e2e (compose + smoke).
 
+- **Этап 8. Maven.** Gradle заменён на Maven: корневой `pom.xml` от `spring-boot-starter-parent` 4.1.2, BOM
+  Spring Cloud и Spring Modulith, `pom.xml` модулей с тем же составом зависимостей (сверка `dependencies` ↔
+  `dependency:list` по runtime и test), MapStruct в `annotationProcessorPaths`, surefire, JaCoCo 80 % на `verify`,
+  Maven Wrapper. Файлы Gradle удалены; Dockerfile, CI, README, ADR и docs обновлены. ADR-009.
+
 ## Финальная проверка (2026-11-08)
 
 | Проверка | Результат |
 |---|---|
-| `./gradlew build` | зелёный: 119 JUnit-тестов, 0 падений, ArchUnit, Modulith verify, JaCoCo ≥ 80 % (строки: payment 89 %, family 89 %, rewards 86 %, notification 84 %, gateway 87 %) |
+| `./mvnw clean verify` | зелёный: 115 JUnit-тестов (до перехода на Maven — те же 115, см. DECISIONS п. 29), 0 падений, ArchUnit, Modulith verify, JaCoCo ≥ 80 % (строки: payment 89 %, family 89 %, rewards 86 %, notification 84 %, gateway 87 %) |
 | `docker compose up -d` | 12 контейнеров healthy: postgres, kafka, keycloak, payment, family, rewards, notification, gateway, frontend, prometheus, grafana, jaeger |
 | `scripts/smoke.sh` | все шаги пройдены: вход, права 200/403/401, «5 BYN на обед» → одобрение → балансы и уведомление, игровые автоматы → HARD_BLOCK, P2P Ивана 35 BYN → NEEDS_APPROVAL → запрос → одобрение → перевод, артефакт → кэшбэк 5 % при оплате по QR |
 | `cd frontend && npm test` | 25 / 25 сценариев прототипа |
@@ -88,5 +93,5 @@
 - SSE-подписки — в памяти одного инстанса notification (ADR-004).
 - Трейс отправки события из outbox не связан с исходным HTTP-трейсом (ADR-008).
 - Цикл недель магазина артефактов не моделируется (как в прототипе — неделя «в руках»).
-- Первая сборка образов — около 10 минут (Gradle внутри Docker); дальше кэш.
+- Первая сборка образов — несколько минут (Maven внутри Docker скачивает зависимости); дальше кэш `~/.m2`.
 - Фронтенд проверен прогоном слоя данных и рендером экранов против живого стенда, без ручного прокликивания в браузере.

@@ -64,8 +64,28 @@
 21. **Генератор случайных чисел для GPS-демо** — `java.util.Random`: в Alpine-JRE нет модуля `jdk.random`,
     и `RandomGenerator.getDefault()` падает при старте.
 22. **Образы.** Один multi-stage Dockerfile: стадия сборки одинакова для всех сервисов (собирает все jar-ы один
-    раз, кэш Gradle — BuildKit cache mount), runtime — `eclipse-temurin:21-jre-alpine`, непривилегированный
+    раз, локальный репозиторий Maven — BuildKit cache mount), runtime — `eclipse-temurin:21-jre-alpine`, непривилегированный
     пользователь, healthcheck по `/actuator/health/readiness`. Лимит памяти 512 МБ, SerialGC — стенд должен
     помещаться на ноутбуке рядом с Keycloak и Kafka.
 23. **Фронтенд за nginx на :5173**, `/api` проксируется на gateway (один origin, без CORS для API); Keycloak — на
     :8180 напрямую (CORS через `webOrigins` клиента). SSE-локация без буферизации, таймаут чтения 1 ч.
+24. **Сборка — Maven** (ADR-009). `groupId` — `by.moby`, `artifactId` — имя модуля (`common`, `payment`, …), версия
+    `1.0.0-SNAPSHOT`; исполняемый jar сервиса — `target/app.jar` (`<finalName>`), как прежний `bootJar` `app.jar`.
+25. **Только surefire, без failsafe.** В Gradle все тесты, включая интеграционные на Testcontainers, шли одной
+    задачей `test` — разделения не было, и оно не вводится: `./mvnw verify` запускает те же 115 тестов. Все классы
+    называются `*Test`, поэтому попадают в шаблон surefire по умолчанию.
+26. **Отдельный `testcontainers-bom` не подключается.** В Gradle версии Testcontainers (2.0.5) приходили из BOM
+    Spring Boot, так же и сейчас: вторая точка управления той же версией только позволила бы им разойтись.
+27. **Ядро ArchUnit — 1.5.1 во всех областях.** BOM Spring Modulith управляет `com.tngtech.archunit:archunit` на 1.4.2.
+    Gradle (побеждает наибольшая) брал 1.5.1 в тестах (из `archunit-junit5:1.5.1`) и 1.4.2 в runtime; в Maven у
+    модуля одна версия на все области, без фиксации получалось бы 1.4.2 и в тестах — несовместимо с
+    `archunit-junit5:1.5.1`. Версия ядра зафиксирована в `dependencyManagement` = `${archunit.version}`.
+28. **Прочие расхождения состава — без влияния на поведение.**
+    `org.jetbrains:annotations` в jar — 17.0.0 вместо 13.0: Maven выбирает версию по ближайшему пути с учётом
+    тестовых зависимостей (testcontainers → duct-tape); это только аннотации без кода.
+    `spring-modulith-apt` (annotation processor документации Modulith) `spring-boot-maven-plugin` не кладёт в
+    исполняемый jar — в runtime он не используется. `okhttp`/`okio` без суффикса `-jvm` и `hibernate-platform` в
+    списке Gradle — это метаданные Gradle Module (мультиплатформенные артефакты и BOM), классы те же.
+29. **Число тестов — 115.** В отчёте этапа 7 было указано 119 — это ошибка подсчёта: JUnit-отчёты Gradle
+    (`build/test-results`) и Maven (surefire) одинаково дают 115 (common 4, gateway 3, payment 44, family 33,
+    rewards 18, notification 13).

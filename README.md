@@ -12,7 +12,7 @@ JUnit-аналог — таблица в [docs/PROGRESS.md](docs/PROGRESS.md).
 Нужен Docker (≈ 4 ГБ свободной памяти для контейнеров).
 
 ```bash
-docker compose up -d --build --wait   # первая сборка образов ~10 минут (Gradle внутри Docker)
+docker compose up -d --build --wait   # первая сборка образов — несколько минут (Maven внутри Docker)
 scripts/smoke.sh                      # сквозная проверка ключевых сценариев через gateway
 ```
 
@@ -32,7 +32,7 @@ scripts/smoke.sh                      # сквозная проверка клю
 Сборка и тесты (нужны JDK 21 и Docker для Testcontainers):
 
 ```bash
-./gradlew build                       # unit + интеграционные тесты (Postgres, Kafka), ArchUnit, JaCoCo ≥ 80 %
+./mvnw clean verify                   # unit + интеграционные тесты (Postgres, Kafka), ArchUnit, Modulith, JaCoCo ≥ 80 %
 cd frontend && npm test               # сценарии прототипа (спецификация)
 ```
 
@@ -116,7 +116,7 @@ services/
   rewards/         баллы, артефакты, кэшбэк
   notification/    лента, inbox, SSE
 libs/common/       контракты событий, коды ошибок, Money
-build-logic/       convention-плагины Gradle (Kotlin DSL)
+pom.xml            родительский POM: версии, BOM, плагины (Maven, ADR-009)
 infra/             docker-compose, Dockerfile-ы, realm Keycloak, Prometheus, Grafana, nginx
 scripts/smoke.sh   сквозная проверка через gateway
 docs/              PLAN, PROGRESS (с таблицей соответствия тестов), DECISIONS, adr/
@@ -134,7 +134,8 @@ docs/              PLAN, PROGRESS (с таблицей соответствия 
   [005 безопасность](docs/adr/0005-security-keycloak-jwt.md) ·
   [006 слой данных фронтенда](docs/adr/0006-frontend-data-layer.md) ·
   [007 деньги и конкурентность](docs/adr/0007-money-ledger-concurrency.md) ·
-  [008 наблюдаемость](docs/adr/0008-observability.md)
+  [008 наблюдаемость](docs/adr/0008-observability.md) ·
+  [009 сборка на Maven](docs/adr/0009-maven.md)
 
 ## Известные ограничения
 
