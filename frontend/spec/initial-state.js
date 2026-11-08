@@ -1,5 +1,5 @@
-import { unitStart } from './rules.js';
-import { artifactsState } from './artifacts.js';
+import { unitStart } from '../js/core/rules.js';
+import { artifactsState } from '../js/core/artifacts.js';
 
 /**
  * Фабрика исходного состояния демо-сессии.

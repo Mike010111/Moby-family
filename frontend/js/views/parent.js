@@ -48,25 +48,25 @@ export const parentView = {
   },
 
   actions: {
-    'parent/approve': ({ el, store }) => {
-      const res = store.dispatch('request/approve', { id: el.dataset.id });
+    'parent/approve': async ({ el, store }) => {
+      const res = await store.dispatch('request/approve', { id: el.dataset.id });
       res.ok ? toast('Одобрено') : toast(res.reason, 'error');
     },
-    'parent/decline': ({ el, store }) => {
-      const res = store.dispatch('request/decline', { id: el.dataset.id });
+    'parent/decline': async ({ el, store }) => {
+      const res = await store.dispatch('request/decline', { id: el.dataset.id });
       res.ok ? toast('Запрос отклонён', 'info') : toast(res.reason, 'error');
     },
-    'parent/approveTask': ({ el, store }) => {
-      const res = store.dispatch('task/approve', { childId: el.dataset.child, taskId: el.dataset.task });
+    'parent/approveTask': async ({ el, store }) => {
+      const res = await store.dispatch('task/approve', { childId: el.dataset.child, taskId: el.dataset.task });
       res.ok ? toast('Задание принято · награда выплачена') : toast(res.reason, 'error');
     },
     'parent/selectChild': ({ el, store }) => store.dispatch('ui/selectChild', { childId: el.dataset.child }),
-    'parent/toggleAllow': ({ el, store }) => {
-      const res = store.dispatch('parent/toggleAllow', { childId: el.dataset.child, key: el.dataset.key });
+    'parent/toggleAllow': async ({ el, store }) => {
+      const res = await store.dispatch('parent/toggleAllow', { childId: el.dataset.child, key: el.dataset.key });
       if (!res.ok) toast(res.reason, 'error');
     },
-    'parent/toggleFreeze': ({ el, store }) => {
-      store.dispatch('parent/toggleFreeze', { childId: el.dataset.child });
+    'parent/toggleFreeze': async ({ el, store }) => {
+      await store.dispatch('parent/toggleFreeze', { childId: el.dataset.child });
       const frozen = store.getState().children[el.dataset.child].card.frozen;
       toast(frozen ? 'Счёт заблокирован: операции остановлены' : 'Счёт снова активен', frozen ? 'error' : 'ok');
     },
@@ -78,8 +78,8 @@ export const parentView = {
     'parent/openAutopay': ({ el, store }) => openAutopay(store, el.dataset.child),
     'limit/create': ({ el, store }) => openLimit(store, el.dataset.child),
     'limit/edit': ({ el, store }) => openLimit(store, el.dataset.child, el.dataset.id),
-    'limit/delete': ({ el, store }) => {
-      const res = store.dispatch('limit/delete', { childId: el.dataset.child, id: el.dataset.id });
+    'limit/delete': async ({ el, store }) => {
+      const res = await store.dispatch('limit/delete', { childId: el.dataset.child, id: el.dataset.id });
       res.ok ? toast('Лимит удалён') : toast(res.reason, 'error');
     },
   },
@@ -303,10 +303,10 @@ function openTopUp(store, childId) {
       <p class="muted small">Со счёта ${state.parent.cardMask} · доступно ${money(state.parent.balance)}</p>
       <p class="field__error" data-error></p>
       <button class="btn btn--ray btn--lg btn--block" type="submit">Перевести</button></form>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       if (name === 'preset') api.el.querySelector('[name=amount]').value = el.dataset.value;
       if (name === 'submit') {
-        const res = store.dispatch('parent/topUp', { childId, amount: el.amount.value });
+        const res = await store.dispatch('parent/topUp', { childId, amount: el.amount.value });
         if (!res.ok) return api.error(res.reason);
         api.close();
         toast('Перевод выполнен');
@@ -327,10 +327,10 @@ function openTask(store, childId) {
         <input class="input" name="reward" ${moneyAttrs} value="2" required /></label>
       <p class="field__error" data-error></p>
       <button class="btn btn--primary btn--lg btn--block" type="submit">Отправить</button></form>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       if (name === 'idea') api.el.querySelector('[name=title]').value = el.dataset.value;
       if (name === 'submit') {
-        const res = store.dispatch('parent/addTask', { childId, title: el.title.value, reward: el.reward.value });
+        const res = await store.dispatch('parent/addTask', { childId, title: el.title.value, reward: el.reward.value });
         if (!res.ok) return api.error(res.reason);
         api.close();
         toast('Задание отправлено');
@@ -389,7 +389,7 @@ function openLimit(store, childId, limitId) {
              <button class="btn btn--primary btn--lg" type="submit">Сохранить</button></div>`
           : `<button class="btn btn--primary btn--lg btn--block" type="submit">Создать лимит</button>`
       }</form>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       if (name === 'input' && el.name === 'count') {
         draft.count = Number(el.value);
         api.el.querySelector('[data-count-label]').textContent = countLabel();
@@ -412,7 +412,7 @@ function openLimit(store, childId, limitId) {
       }
       if (name !== 'submit') return;
       const payload = { childId, count: draft.count, unit: draft.unit, amount: el.amount.value, categories: draft.categories };
-      const res = editing ? store.dispatch('limit/update', { ...payload, id: editing.id }) : store.dispatch('limit/create', payload);
+      const res = editing ? await store.dispatch('limit/update', { ...payload, id: editing.id }) : await store.dispatch('limit/create', payload);
       if (!res.ok) return api.error(res.reason);
       api.close();
       toast(editing ? 'Лимит сохранён' : 'Лимит создан');
@@ -452,7 +452,7 @@ function openAutopay(store, childId) {
       <p class="field__error" data-error></p>
       <div class="sheet__actions"><button class="btn btn--ghost btn--lg" type="button" data-sheet-action="close">Отменить</button>
         <button class="btn btn--primary btn--lg" type="submit">Сохранить</button></div></form>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       if (name === 'enabled') {
         draft.enabled = !draft.enabled;
         el.setAttribute('aria-checked', String(draft.enabled));
@@ -471,7 +471,7 @@ function openAutopay(store, childId) {
         return;
       }
       if (name !== 'submit') return;
-      const res = store.dispatch('autopay/update', {
+      const res = await store.dispatch('autopay/update', {
         childId,
         enabled: draft.enabled,
         amount: el.amount.value,
@@ -517,7 +517,7 @@ function openAddChild() {
         </div></fieldset>
 
       <button class="btn btn--ray btn--lg btn--block" type="submit">${icon('shieldCheck')} Подписать в Moby</button></form>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       if (name === 'seg') {
         api.el.querySelectorAll('[data-sheet-action=seg]').forEach((b) => b.setAttribute('aria-pressed', String(b === el)));
       }

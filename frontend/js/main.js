@@ -1,19 +1,17 @@
 /**
- * Точка входа: связывает Store, окна ролей и оболочку стенда.
+ * Точка входа: связывает ApiStore (данные из бэкенда через gateway), окна ролей и оболочку стенда.
  *
- *   ┌──────────── Store (единый State) ────────────┐
+ *   ┌──────── ApiStore (снимок состояния из API) ───┐
  *   │ parent · relatives · children · requests ·   │
- *   │ feed · log                                   │
+ *   │ feed · log        ◀── SSE: уведомления       │
  *   └───────▲──────────────────────────┬───────────┘
- *           │ dispatch()               │ subscribe()
+ *           │ dispatch() → REST        │ subscribe()
  *   ┌───────┴───────┐          ┌───────▼────────┐
  *   │ View handlers │          │ renderScreen() │ → parent | kid | teen
  *   └───────────────┘          │ renderShell()  │ → вкладки жюри
  *                              └────────────────┘
  */
-import { Store } from './core/store.js';
-import { reducers } from './core/actions.js';
-import { createInitialState } from './core/initial-state.js';
+import { ApiStore } from './core/api-store.js';
 import { parentView } from './views/parent.js';
 import { kidView } from './views/kid.js';
 import { teenView } from './views/teen.js';
@@ -30,9 +28,22 @@ const views = { parent: parentView, kid: kidView, teen: teenView };
 const actionHandlers = Object.assign({}, ...Object.values(views).map((v) => v.actions));
 const changeHandlers = Object.assign({}, ...Object.values(views).map((v) => v.changes ?? {}));
 
-const store = new Store(reducers, createInitialState);
 const screen = document.getElementById('screen');
 const scroll = document.getElementById('screen-scroll');
+const store = await connect();
+
+/** Вход под демо-пользователем вкладки из адреса (#parent | #kid | #teen) и загрузка его данных. */
+async function connect() {
+  try {
+    return await ApiStore.connect(roleFromHash() ?? 'parent');
+  } catch (e) {
+    console.error(e);
+    scroll.innerHTML = `<div class="app"><section class="section card"><div class="card__body">
+      <h2 class="section-title">Бэкенд недоступен</h2>
+      <p class="small muted">Запустите стенд: <code>docker compose up -d</code> и обновите страницу.</p></div></section></div>`;
+    throw e;
+  }
+}
 let currentRole = null;
 
 /* ───────────── Рендер экрана смартфона ───────────── */
@@ -182,15 +193,13 @@ mountOverlays(screen);
 initDropdowns();
 initShell({
   store,
-  onReset: () => {
+  onReset: async () => {
     closeOverlay();
-    store.reset();
+    await store.reset();
     toast('Демо-сессия сброшена', 'info');
   },
 });
 
-const hashRole = roleFromHash();
-if (hashRole) store.dispatch('ui/setRole', { role: hashRole });
 window.addEventListener('hashchange', () => {
   const role = roleFromHash();
   if (role) store.dispatch('ui/setRole', { role });

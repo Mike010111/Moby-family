@@ -1,0 +1,14 @@
+**/build
+**/.gradle
+.git
+.github
+.idea
+docs
+scripts
+infra/keycloak
+infra/postgres
+infra/prometheus
+infra/grafana
+frontend/spec
+frontend/node_modules
+**/*.md

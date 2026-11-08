@@ -99,8 +99,8 @@ export function piggyCard(state, c) {
   });
 }
 
-export function submitPiggy({ el, store }) {
-  const res = store.dispatch('piggy/deposit', { childId: el.dataset.child, piggyId: el.dataset.piggy, amount: el.amount.value });
+export async function submitPiggy({ el, store }) {
+  const res = await store.dispatch('piggy/deposit', { childId: el.dataset.child, piggyId: el.dataset.piggy, amount: el.amount.value });
   if (!res.ok) return toast(res.reason, 'error');
   if (!res.completed) toast('Отложено в копилку · +2 балла'); // о сборе копилки сообщит уведомление
 }
@@ -126,10 +126,10 @@ function openPiggyCreate(store, childId, rerender) {
         <input class="input input--amount" name="target" ${moneyAttrs} placeholder="0,00" /></label>
       <p class="field__error" data-error></p>
       <button class="btn btn--primary btn--lg btn--block" type="submit">${icon('jar')} Создать копилку</button></form>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       if (name === 'idea') api.el.querySelector('[name=goal]').value = el.dataset.value;
       if (name !== 'submit') return;
-      const res = store.dispatch('piggy/create', { childId, goal: el.goal.value, target: el.target.value });
+      const res = await store.dispatch('piggy/create', { childId, goal: el.goal.value, target: el.target.value });
       if (!res.ok) return api.error(res.reason);
       selectedPiggy[childId] = res.id; // новая копилка сразу выбрана для пополнения
       rerender();
@@ -160,9 +160,9 @@ function openPiggyEdit(store, childId, piggyId) {
       <p class="field__error" data-error></p>
       <div class="sheet__actions"><button class="btn btn--ghost btn--lg" type="button" data-sheet-action="close">Отменить</button>
         <button class="btn btn--primary btn--lg" type="submit">${junior ? 'Отправить запрос' : 'Сохранить'}</button></div></form>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       if (name !== 'submit') return;
-      const res = store.dispatch('piggy/update', { childId, piggyId, target: el.target.value });
+      const res = await store.dispatch('piggy/update', { childId, piggyId, target: el.target.value });
       if (!res.ok) return api.error(res.reason);
       api.close();
       if (res.pending) toast(`Запрос отправлен ${res.relative.dative}`);
@@ -189,9 +189,9 @@ function openPiggyDelete(store, childId, piggyId) {
       }
       <div class="sheet__actions"><button class="btn btn--ghost btn--lg" type="button" data-sheet-action="close">Отменить</button>
         <button class="btn ${junior ? 'btn--primary' : 'btn--danger'} btn--lg" type="button" data-sheet-action="confirm">${junior ? 'Отправить запрос' : 'Удалить'}</button></div></div>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       if (name !== 'confirm') return;
-      const res = store.dispatch('piggy/delete', { childId, piggyId });
+      const res = await store.dispatch('piggy/delete', { childId, piggyId });
       api.close();
       if (!res.ok) return toast(res.reason, 'error');
       toast(res.pending ? `Запрос отправлен ${res.relative.dative}` : `Копилка удалена · ${money(res.returned)} на счёте`);
@@ -255,7 +255,7 @@ export function openAskMoney(store, childId, { amount = '5', reason = 'На об
       <button class="btn btn--ray btn--lg btn--block" type="submit">Отправить запрос</button>
       <p class="muted tiny" style="text-align:center" data-push-hint>${esc(pushText(main))}</p>
     </form>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       const form = api.el.querySelector('form');
       if (name === 'dd') {
         relativeId = el.dataset.value;
@@ -269,7 +269,7 @@ export function openAskMoney(store, childId, { amount = '5', reason = 'На об
         return;
       }
       if (name === 'submit') {
-        const res = store.dispatch('request/create', { childId, relativeId, amount: form.amount.value, reason: form.reason.value });
+        const res = await store.dispatch('request/create', { childId, relativeId, amount: form.amount.value, reason: form.reason.value });
         if (!res.ok) return api.error(res.reason);
         api.close();
         toast(`Запрос отправлен ${res.relative.dative}`);

@@ -1,12 +1,13 @@
 /**
- * Сценарные тесты бизнес-логики (без браузера): npm test
+ * Сценарные тесты бизнес-логики прототипа (без браузера): npm test
+ * Исполняемая спецификация: у каждого сценария есть JUnit-аналог в services/* (см. docs/PROGRESS.md).
  * Проверяют ровно то, что жюри будет кликать руками.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Store } from '../js/core/store.js';
-import { reducers } from '../js/core/actions.js';
-import { createInitialState } from '../js/core/initial-state.js';
+import { Store } from './store.js';
+import { reducers } from './actions.js';
+import { createInitialState } from './initial-state.js';
 import { limitUsage, parseMoney, periodTitle, quoteP2P, unitStart } from '../js/core/rules.js';
 
 const fresh = () => new Store(reducers, createInitialState);

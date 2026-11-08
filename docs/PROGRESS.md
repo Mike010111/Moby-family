@@ -24,8 +24,16 @@
   anna/misha/ivan + olga из другой семьи), resource server во всех сервисах и в gateway (WebFlux), SSE-маршрут без
   таймаута. Тесты прав в каждом сервисе, `GatewayRoutingTest`. ADR-005.
 
+- **Этап 6. Фронтенд и стенд.** `ApiStore` вместо локального store (тот же интерфейс, состояние из API,
+  SSE), экраны — только `await` у результатов; вкладки жюри = вход под anna/misha/ivan; «Сбросить демо» —
+  reset во всех сервисах. Прототипные редьюсеры → `frontend/spec`. Dockerfile (общая стадия сборки),
+  nginx, полный compose, `scripts/smoke.sh`. ADR-006.
+- **Проверка фронтенда.** Скрипт гоняет `ApiStore` в Node против живого стенда через nginx и рендерит настоящие
+  `parentView/kidView/teenView` из полученного состояния: 25 проверок (запрос → одобрение, HARD_BLOCK,
+  артефакт → кэшбэк, P2P NEEDS_APPROVAL → запрос, заморозка, иерархия лимитов, подписка, копилка, SSE).
+
 ## Дальше
-- Этап 6: Docker-образы, фронтенд на API-клиенте, smoke.sh.
+- Этап 7: наблюдаемость (Prometheus, Grafana, OpenTelemetry), JaCoCo, ArchUnit, README, ADR.
 
 ## Известные проблемы
 - нет

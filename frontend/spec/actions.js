@@ -16,10 +16,10 @@ import {
   quoteP2P,
   round2,
   validateLimit,
-} from './rules.js';
-import { CONTACTS, GEO_PLACES, LESSONS, QR_MERCHANTS } from './catalog.js';
-import { ARTIFACTS, RARITY, SHOP, cashbackAmount, cashbackFor, categoryLabel, cycleWeeks, isActive, makeOwned, offerState, renewOffer } from './artifacts.js';
-import { money } from './format.js';
+} from '../js/core/rules.js';
+import { CONTACTS, GEO_PLACES, LESSONS, QR_MERCHANTS } from '../js/core/catalog.js';
+import { ARTIFACTS, RARITY, SHOP, cashbackAmount, cashbackFor, categoryLabel, cycleWeeks, isActive, makeOwned, offerState, renewOffer } from '../js/core/artifacts.js';
+import { money } from '../js/core/format.js';
 
 const FROZEN = { ok: false, code: 'FROZEN', reason: 'Счёт заблокирован' };
 

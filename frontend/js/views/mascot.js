@@ -100,7 +100,7 @@ function openShop(store, childId) {
   const sheet = openSheet({
     title: 'Магазин артефактов',
     body: renderShop(child(), Date.now(), confirmId),
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       const refresh = () => {
         api.el.querySelector('.sheet__body').innerHTML = renderShop(child(), Date.now(), confirmId);
       };
@@ -111,7 +111,7 @@ function openShop(store, childId) {
           confirmId = id; // первый тап — спросить про замену
           return refresh();
         }
-        const res = store.dispatch('artifact/buy', { childId, id });
+        const res = await store.dispatch('artifact/buy', { childId, id });
         if (!res.ok) {
           confirmId = null;
           refresh();
@@ -128,7 +128,7 @@ function openShop(store, childId) {
         return refresh();
       }
       if (name === 'renew') {
-        const res = store.dispatch('artifact/renew', { childId });
+        const res = await store.dispatch('artifact/renew', { childId });
         if (!res.ok) return toast(res.reason, 'error');
         justEquipped = childId;
         api.close();

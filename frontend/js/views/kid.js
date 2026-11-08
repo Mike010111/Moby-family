@@ -62,12 +62,12 @@ export const kidView = {
       });
     },
     'kid/scrollTo': ({ el }) => document.getElementById(el.dataset.target)?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
-    'kid/completeTask': ({ el, store }) => {
-      const res = store.dispatch('task/complete', { childId: CHILD_ID, taskId: el.dataset.task });
+    'kid/completeTask': async ({ el, store }) => {
+      const res = await store.dispatch('task/complete', { childId: CHILD_ID, taskId: el.dataset.task });
       res.ok ? toast('Отправлено на проверку') : toast(res.reason, 'error');
     },
-    'kid/lesson': ({ store }) => {
-      const res = store.dispatch('lesson/complete', { childId: CHILD_ID });
+    'kid/lesson': async ({ store }) => {
+      const res = await store.dispatch('lesson/complete', { childId: CHILD_ID });
       res.ok ? toast('Урок пройден · +10 баллов') : toast(res.reason, 'info');
     },
     'child/piggy': submitPiggy,

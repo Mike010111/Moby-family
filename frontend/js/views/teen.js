@@ -64,13 +64,13 @@ export const teenView = {
       });
     },
     'teen/details': ({ store }) => openDetails(store.getState().children[CHILD_ID]),
-    'teen/subToggle': ({ el, store }) => {
-      const res = store.dispatch('sub/toggle', { childId: CHILD_ID, id: el.dataset.id });
+    'teen/subToggle': async ({ el, store }) => {
+      const res = await store.dispatch('sub/toggle', { childId: CHILD_ID, id: el.dataset.id });
       if (!res.ok) toast(res.reason, 'error');
     },
     'teen/subEdit': ({ el, store }) => openSubEdit(store, el.dataset.id),
-    'teen/subDelete': ({ el, store }) => {
-      const res = store.dispatch('sub/delete', { childId: CHILD_ID, id: el.dataset.id });
+    'teen/subDelete': async ({ el, store }) => {
+      const res = await store.dispatch('sub/delete', { childId: CHILD_ID, id: el.dataset.id });
       res.ok ? toast('Подписка удалена') : toast(res.reason, 'error');
     },
     'child/piggy': submitPiggy,
@@ -193,7 +193,7 @@ function openP2P(store) {
       <p class="field__error" data-error></p>
       <button class="btn btn--ray btn--lg btn--block" type="submit"></button></form>`,
     onMount: (el) => sync({ el, error: () => {} }),
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       const form = api.el.querySelector('form');
       if (name === 'contact') {
         contactId = el.dataset.id;
@@ -209,12 +209,12 @@ function openP2P(store) {
 
       const mode = form.querySelector('[type=submit]').dataset.mode;
       if (mode === 'request') {
-        const res = store.dispatch('p2p/requestOver', { childId: CHILD_ID, contactId, amount: form.amount.value });
+        const res = await store.dispatch('p2p/requestOver', { childId: CHILD_ID, contactId, amount: form.amount.value });
         if (!res.ok) return api.error(res.reason);
         api.close();
         return toast(`Запрос отправлен ${rel.dative}`);
       }
-      const res = store.dispatch('p2p/send', { childId: CHILD_ID, contactId, amount: form.amount.value });
+      const res = await store.dispatch('p2p/send', { childId: CHILD_ID, contactId, amount: form.amount.value });
       if (!res.ok) return api.error(res.reason);
       api.close();
       toast(res.mode === 'approved' ? 'Перевод выполнен · разовое одобрение использовано' : 'Перевод выполнен');
@@ -251,9 +251,9 @@ function openSubEdit(store, id) {
         <button class="btn btn--ghost btn--lg" type="button" data-sheet-action="close">Отменить</button>
         <button class="btn btn--primary btn--lg" type="submit">Сохранить</button>
       </div></form>`,
-    onAction(name, el, api) {
+    async onAction(name, el, api) {
       if (name !== 'submit') return;
-      const res = store.dispatch('sub/update', { childId: CHILD_ID, id, price: el.price.value });
+      const res = await store.dispatch('sub/update', { childId: CHILD_ID, id, price: el.price.value });
       if (!res.ok) return api.error(res.reason);
       api.close();
       toast('Сумма подписки изменена');

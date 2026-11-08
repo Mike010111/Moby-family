@@ -107,7 +107,7 @@ export function toast(text, tone = 'ok') {
 /* ───────────── QR-сканер КРОК ───────────── */
 /**
  * Симуляция камеры: выбор демо-QR → «сканирование» → подтверждение → результат.
- * @param {{merchants: object[], legalNote?: string, balanceText: string, onPay: (m: object) => object, onDone?: Function}} cfg
+ * @param {{merchants: object[], legalNote?: string, balanceText: string, onPay: (m: object) => object | Promise<object>, onDone?: Function}} cfg
  */
 export function openScanner({ merchants, legalNote, balanceText, onPay, onDone }) {
   closeOverlay();
@@ -201,7 +201,7 @@ export function openScanner({ merchants, legalNote, balanceText, onPay, onDone }
         return scanning(m);
       case 'pay':
         el.disabled = true;
-        return result(onPay(m));
+        return Promise.resolve(onPay(m)).then(result);
       default:
     }
   });
