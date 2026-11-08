@@ -4,3 +4,8 @@ spring:
       auto-create: false
     listener:
       auto-startup: false
+
+management:
+  tracing:
+    export:
+      enabled: false

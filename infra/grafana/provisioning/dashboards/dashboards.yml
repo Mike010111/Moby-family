@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: moby
+    folder: Moby Family
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

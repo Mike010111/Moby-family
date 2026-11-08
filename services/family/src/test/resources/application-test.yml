@@ -17,3 +17,8 @@ spring:
 logging:
   level:
     org.springframework.modulith: warn
+
+management:
+  tracing:
+    export:
+      enabled: false

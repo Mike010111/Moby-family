@@ -35,6 +35,23 @@ tasks.named<JacocoReport>("jacocoTestReport") {
     }
 }
 
+/** Порог покрытия строк — ниже 80 % сборка красная. */
+val coverageVerification = tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+    dependsOn(tasks.named("test"))
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(coverageVerification)
+}
+
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName = "app.jar"
 }

@@ -1,135 +1,144 @@
-# Moby Family — прототип детско-семейного банкинга (МТБанк)
+# Moby Family — бэкенд детско-семейного банкинга (МТБанк / Moby)
 
-Интерактивный фронтенд-прототип для хакатона «Детско-семейный банкинг в Moby».
-Один экран смартфона, три роли, общий State: действие в окне ребёнка мгновенно
-появляется у главного родственника и наоборот.
+Хакатонный прототип на чистом JS (бизнес-логика жила в браузере) переписан в бэкенд на **Java 21 / Spring Boot 4**:
+четыре доменных сервиса со своими БД, gateway, Keycloak, Kafka с transactional outbox, наблюдаемость.
+Фронтенд прототипа сохранён один в один — заменён только слой данных.
 
-- **Главный родственник** — Moby-Family: запросы и события, счёт ребёнка, лимиты, автоперевод, категории, геолокация, задания, операции.
-- **Ребёнок 7–13** — Moby-Young (7–13): «Карта учащегося», лимиты, оплата по QR КРОК (ст. 27 ГК РБ), разрешения, копилка, задания, уроки. Переводов нет.
-- **Ребёнок 14–17** — Moby-Young (14–17): карта, переводы в пределах лимитов, запрос разового перевода сверх лимита, копилка, подписки, аналитика.
+Поведение задано исполняемой спецификацией прототипа (`frontend/spec`): у каждого из 25 сценариев есть
+JUnit-аналог — таблица в [docs/PROGRESS.md](docs/PROGRESS.md).
 
-## Запуск
+## Быстрый старт
 
-Без сборки и зависимостей. Нужен любой статический сервер (ES-модули не открываются по `file://`).
-
-```bash
-npm start                      # npx serve на http://localhost:5173
-# или
-python3 -m http.server 5173
-```
-
-Прямые ссылки на роль: `/#parent`, `/#kid`, `/#teen`.
-Каждое открытие ссылки — отдельный запуск с исходными данными: на каждом устройстве и в каждой новой вкладке
-своя демо-сессия, без общей истории. Состояние хранится в `sessionStorage` вкладки, поэтому перезагрузка
-страницы его не теряет; «Сбросить демо» возвращает исходные данные вручную.
-
-Картинки карты, белки и артефактов (WebP) загружаются и декодируются до первого показа экрана,
-а при перерисовке переиспользуются — смена вкладок и действий проходит без подгрузки и пустых кадров.
-
-Иконка банка: положите официальный файл в `assets/icon.png` — он подставится в шапку всех окон,
-в панель жюри и во вкладку браузера. Пока файла нет, показывается векторный запасной знак.
-
-Тесты бизнес-логики (Node 18+, без зависимостей):
+Нужен Docker (≈ 4 ГБ свободной памяти для контейнеров).
 
 ```bash
-npm test
+docker compose up -d --build --wait   # первая сборка образов ~10 минут (Gradle внутри Docker)
+scripts/smoke.sh                      # сквозная проверка ключевых сценариев через gateway
 ```
 
-## Структура
+| Что | Адрес | Доступ |
+|---|---|---|
+| Фронтенд (стенд с панелью жюри) | http://localhost:5173 | вкладки = вход под демо-пользователями |
+| API Gateway | http://localhost:8080/api/… | Bearer JWT |
+| Keycloak | http://localhost:8180 | admin / admin, realm `moby` |
+| Grafana | http://localhost:3000 | дашборд «Moby Family — сервисы и платежи» |
+| Prometheus | http://localhost:9090 | |
+| Jaeger | http://localhost:16686 | трейсы всех сервисов |
 
+Демо-пользователи (пароль у всех `demo`): **anna** — Анна, главный родственник; **misha** — Миша, 9 лет;
+**ivan** — Иван, 17 лет; **olga** — родитель другой семьи (для проверки 403).
+«Сбросить демо» на стенде возвращает seed-данные во всех сервисах (`POST /api/<service>/demo/reset`, профиль `demo`).
+
+Сборка и тесты (нужны JDK 21 и Docker для Testcontainers):
+
+```bash
+./gradlew build                       # unit + интеграционные тесты (Postgres, Kafka), ArchUnit, JaCoCo ≥ 80 %
+cd frontend && npm test               # сценарии прототипа (спецификация)
 ```
-index.html                 семантическая разметка: панель вкладок жюри и корпус смартфона
-assets/                    icon.png — официальная иконка банка
-css/
-  tokens.css               дизайн-токены: палитра (плоская; градиент только у линии сканера QR и радара), цвета редкостей, шрифты, размеры карточек
-  base.css                 reset, панель жюри, сцена, корпус смартфона, адаптив
-  components.css           карточки, кнопки, switch, range, chips, dropdown, sheet, toast
-  views.css                виджеты окон: лента, лимиты, радар, копилка, подписки, сканер
-js/
-  main.js                  точка входа: рендер, делегирование событий, ввод денег, уведомления детям
-  config.js                тайминги
-  core/
-    store.js               Store: dispatch → reducer(draft) → subscribers; persist + синхронизация вкладок
-    actions.js             все редьюсеры "домен/действие" — единственное место изменения данных
-    rules.js               чистые правила: категории, лимиты, блокировка, P2P сверх лимита, суммы
-    initial-state.js       исходные данные демо-семьи
-    catalog.js             справочники: QR-точки, контакты, гео-точки, уроки
-    format.js              деньги (ru-RU), даты, экранирование, склонения
-  ui/
-    icons.js               SVG-иконки (без эмодзи), иконка банка
-    components.js          карточка, switch, range, progress, ring, лимиты, dropdown, история, pseudo-QR
-    dropdown.js            поведение выпадающего списка (клавиатура, клик вне)
-    overlay.js             bottom-sheet, тосты, сканер QR КРОК
-    shell.js               вкладки жюри (WAI-ARIA tabs)
-  views/
-    parent.js / kid.js / teen.js   окна ролей: render(state) + actions + changes
-    shared.js              общее для детских окон: шапка, лимиты, копилка, запрос денег
-tests/store.test.js        сценарные тесты бизнес-логики
-```
-
-## Маскот и магазин артефактов (окна 7–13 и 14–17)
-
-На карте учащегося — белка-маскот: крупная, стоит на нижнем крае карты, чтобы надетые артефакты были хорошо видны.
-Положение задано в процентах от карты, поэтому совпадает при любом размере. Картинка белки зависит от надетых артефактов.
-
-| Правило | Где |
-| --- | --- |
-| 7–13: 4 слота (головной убор → очки → верхняя одежда → в руках), цикл 4 недели; 14–17: + обувь, цикл 5 недель | `artifacts.js → CYCLE` |
-| Каждую неделю в магазине — артефакты одного слота; в прототипе — неделя «в руках» | `SHOP`, `weekSlot` |
-| Редкость: обычный 3% / 50 баллов, редкий 4% / 100, легендарный 5% / 200 | `RARITY` |
-| Покупка за баллы ребёнка, работает и при заблокированном счёте (баллы не блокируются) | `artifact/buy` |
-| Повторная покупка за неделю заменяет артефакт; купленный недоступен до конца недели | `soldOut`, `offerState` |
-| Кэшбэк артефакта начисляется при оплате по QR в его категории | `cashbackFor`, `pay/qr` |
-| Продление в неделю своего слота: кэшбэк −1% (не ниже 3%), цена — по новой редкости | `renewOffer`, `artifact/renew` |
-
-Файлы: `assets/cards/` — «голые» карты, `assets/mascot/` — белки.
-`assets/artifacts/` — картинки артефактов для магазина. Если какого-то файла нет, магазин покажет векторную заглушку.
-
-Под картой — кнопка «Магазин артефактов» с баллами ребёнка; баланс денег — отдельным блоком «Мои деньги», чтобы не путать деньги и баллы.
-
-## Копилки (окна 7–13 и 14–17)
-
-| Правило | Где |
-| --- | --- |
-| Несколько копилок (до 5), у каждой своя цель; пополнение — в выбранную | `piggy/create`, `piggy/deposit` |
-| Цель собрана → копилка закрывается, деньги на счёт, сообщение ребёнку и событие родителю | `completePiggy` |
-| Изменить цель можно не меньше уже собранного; равна собранному — копилка собрана | `piggy/update` |
-| Удаление — накопленное возвращается на счёт | `piggy/delete` |
-| 7–13: изменение и удаление — запросом главному родственнику, применяется после одобрения | `requestPiggyChange`, `request/approve` |
-| 14–17: изменение и удаление — сразу, с предупреждением | `openPiggyEdit`, `openPiggyDelete` |
-
-## Ключевые правила
-
-| Правило | Где |
-| --- | --- |
-| Лимит: срок 1–50 (день / неделя / месяц), сумма, категории; пустой список = все траты | `validateLimit`, `limitUsage` |
-| Периоды календарные: «Сегодня» — с полуночи, «Эта неделя» — с понедельника, «Октябрь» — с 1-го числа; для сроков больше 1 — даты («21–23 октября») | `limitPeriod`, `periodTitle` |
-| Иерархия: лимит на более длинный срок не меньше более короткого, если покрывает его категории (неделя «все» ≥ день «все»; месяц «Книги» не сравнивается с неделей «Кафе») | `validateLimit` → `HIERARCHY` |
-| Два лимита с одинаковым непустым набором категорий — нельзя | `validateLimit` → `DUPLICATE` |
-| Лимит меньше уже потраченного — «Лимит исчерпан», остаток 0, операции отклоняются | `limitUsage` |
-| Суммы — не больше двух знаков после запятой (ввод и проверка в редьюсерах) | `parseMoney`, `main.js` |
-| Блокировка счёта: стоп пополнению, копилке, заданиям, оплатам, переводам, запросам; GPS, заряд и уроки работают | `FROZEN` в `actions.js` |
-| Переводы 14–17 ограничены лимитами; сверх лимита — «Запросить у мамы» → разовое одобрение до запрошенной суммы | `quoteP2P`, `p2p/requestOver`, `p2p/send` |
-| Запрос денег можно отправить любому родственнику; окно в демо есть только у главного | `request/create` (`pending` / `sent`) |
-| Баллы ребёнка изолированы от баллов родителя | `parent.points` ≠ `child.points` |
 
 ## Архитектура
 
+```mermaid
+flowchart LR
+    browser["Браузер<br/>frontend (nginx :5173)"]
+    kc["Keycloak<br/>realm moby"]
+    gw["Gateway<br/>Spring Cloud Gateway :8080<br/>проверка JWT"]
+
+    subgraph services["Сервисы (у каждого своя БД Postgres)"]
+        pay["payment :8081<br/>счета · ledger · QR · P2P<br/>лимиты · заморозка · автоперевод"]
+        fam["family :8082<br/>запросы · задания<br/>копилки · уроки"]
+        rew["rewards :8083<br/>баллы · артефакты<br/>кэшбэк"]
+        ntf["notification :8084<br/>лента · inbox · SSE"]
+    end
+
+    kafka[("Kafka<br/>payment.events · family.events · rewards.events")]
+    obs["Prometheus · Grafana · Jaeger"]
+
+    browser -- "токен (password grant)" --> kc
+    browser -- "/api + JWT, SSE" --> gw
+    gw --> pay & fam & rew & ntf
+    fam -- "RestClient + JWT<br/>переводы, копилки, одобрения" --> pay
+    pay -- "RestClient + JWT<br/>процент кэшбэка" --> rew
+    pay -- outbox --> kafka
+    fam -- outbox --> kafka
+    rew -- outbox --> kafka
+    kafka -- "AccountFrozen/Unfrozen" --> fam
+    kafka -- "PaymentCompleted, TaskApproved, …" --> rew
+    kafka -- "все события" --> ntf
+    services -. "метрики, трейсы" .-> obs
 ```
- View (data-action) ──▶ store.dispatch(type, payload) ──▶ reducer(draft) ──▶ new State
-        ▲                                                                       │
-        └──────── renderScreen() + renderShell()  ◀── subscribe() ◀────────────┘
+
+| Сервис | Ответственность | Ключевое |
+|---|---|---|
+| **payment** | счета, ledger, QR-оплата, P2P, лимиты, категории, хард-блоки, заморозка, подписки, автоперевод, деньги копилок | двойная запись, `SELECT … FOR UPDATE`, Idempotency-Key, порядок проверок `checkPayment`, котировка P2P SEND/APPROVED/REQUEST/BLOCKED, ShedLock |
+| **family** | семья и роли, дети и когорты, запросы с одобрением, задания, копилки (7–13 через одобрение, 14–17 сразу), уроки, GPS | машины состояний, деньги только через API payment, проекция заморозки |
+| **rewards** | баллы, магазин артефактов, кэшбэк-предложения, продление | баллы по событиям, идемпотентные консьюмеры |
+| **notification** | лента родителя и inbox ребёнка | тексты из прототипа, SSE `notification` / `changed` |
+| **gateway** | единая точка входа | JWT (Keycloak), маршрутизация, SSE без таймаута |
+| **libs/common** | только контракты | события Kafka, `ErrorCode`, `Money`, `BusinessException` |
+
+Внутри каждого сервиса — модули Spring Modulith (`ApplicationModules.verify()`), слои controller → service →
+repository (ArchUnit), DTO отдельно от сущностей (MapStruct), схема — только Flyway.
+
+### Главные технические решения
+
+* **Деньги.** `Money` — BigDecimal scale 2; ledger двойной записи; баланс сверяется с проводками; проверка лимита и
+  списание — в одной транзакции под `SELECT … FOR UPDATE`; тест на 50 параллельных оплат. → [ADR-007](docs/adr/0007-money-ledger-concurrency.md)
+* **Идемпотентность.** `Idempotency-Key` для пополнений, оплат, переводов и копилок; уникальный индекс; повтор
+  возвращает сохранённый ответ (в том числе отказ оплаты).
+* **Время.** Только через внедрённый `Clock` (Europe/Minsk); календарные периоды лимитов — порт `unitStart`,
+  `limitPeriod`, `periodTitle`. ArchUnit запрещает `Instant.now()` без часов.
+* **Ошибки.** RFC 9457 ProblemDetail с полем `code` (коды прототипа: `LIMIT`, `FROZEN`, `HARD_BLOCK`, … `AGE`).
+* **События.** Только через transactional outbox (Spring Modulith → Kafka), консьюмеры идемпотентны
+  (`processed_events`). → [ADR-002](docs/adr/0002-transactional-outbox.md)
+* **Безопасность.** Keycloak; claims `member_id`, `family_id`, `roles`; JWT проверяют gateway и каждый сервис;
+  родитель — только дети своей семьи, ребёнок — только своё. → [ADR-005](docs/adr/0005-security-keycloak-jwt.md)
+
+## API (через gateway)
+
+| Префикс | Примеры |
+|---|---|
+| `/api/payment` | `GET /children/{id}/account`, `GET /children/{id}/operations`, `POST /children/{id}/qr-payments`*, `POST /children/{id}/topups`*, `GET /children/{id}/p2p/quote?amount=`, `POST /children/{id}/p2p-transfers`*, `PUT /children/{id}/frozen`, `PUT /children/{id}/categories/{key}`, `POST|PUT|DELETE /children/{id}/limits`, `PUT /children/{id}/autopay`, `PATCH|DELETE /children/{id}/subscriptions/{sid}` |
+| `/api/family` | `GET /me`, `GET|POST /requests`, `POST /requests/p2p-over`, `POST /requests/{id}/approve|decline`, `POST /children/{id}/tasks[/{tid}/submit|approve]`, `POST /children/{id}/piggies`, `POST /children/{id}/piggies/{pid}/deposits`*, `PUT …/target`, `DELETE …`, `POST /children/{id}/lessons/complete` |
+| `/api/rewards` | `GET /me/points`, `GET /children/{id}`, `POST /children/{id}/artifacts/{aid}/purchase`, `POST /children/{id}/artifacts/renew` |
+| `/api/notifications` | `GET /feed`, `GET /inbox?childId=`, `POST /inbox/seen`, `GET /stream` (SSE) |
+
+`*` — обязателен заголовок `Idempotency-Key`. OpenAPI каждого сервиса — `/v3/api-docs` (springdoc) на его порту.
+
+## Структура репозитория
+
+```
+frontend/          прототип (экраны без изменений) + js/core/api-store.js; spec/ — исполняемая спецификация
+services/
+  gateway/         Spring Cloud Gateway (WebFlux)
+  payment/         счета, ledger, оплаты, лимиты, …
+  family/          семья, запросы, задания, копилки, уроки
+  rewards/         баллы, артефакты, кэшбэк
+  notification/    лента, inbox, SSE
+libs/common/       контракты событий, коды ошибок, Money
+build-logic/       convention-плагины Gradle (Kotlin DSL)
+infra/             docker-compose, Dockerfile-ы, realm Keycloak, Prometheus, Grafana, nginx
+scripts/smoke.sh   сквозная проверка через gateway
+docs/              PLAN, PROGRESS (с таблицей соответствия тестов), DECISIONS, adr/
 ```
 
-- Единый сериализуемый State (`parent`, `relatives`, `children`, `requests`, `feed`, `log`, `ui`).
-- Редьюсеры получают клон состояния и возвращают результат (`{ ok, reason, ... }`) — UI показывает причину отказа.
-- Вся валидация — в `rules.js` (чистые функции), поэтому правила тестируются без браузера.
-- Окна — функции `render(state) → HTML`; события ловятся делегированием по `data-action` / `data-submit` / `dd:change`.
-- Фокус и позиция прокрутки (экрана и карточек) сохраняются между перерисовками.
-- Карточки-списки растут по содержимому до `--card-h`, дальше прокручиваются внутри; остальные карточки — фиксированной высоты.
-- Страница не прокручивается: панель вкладок стоит в потоке, смартфон занимает оставшуюся высоту — панель никогда не перекрывает приложение.
+## Документация
 
-## Ограничения прототипа
+* [docs/PLAN.md](docs/PLAN.md) — модули, модель данных, REST, события, распределение правил прототипа
+* [docs/DECISIONS.md](docs/DECISIONS.md) — решения по неоднозначностям
+* [docs/PROGRESS.md](docs/PROGRESS.md) — что сделано, соответствие сценариев прототипа JUnit-тестам, ограничения
+* ADR: [001 разбивка на сервисы](docs/adr/0001-service-decomposition.md) ·
+  [002 outbox](docs/adr/0002-transactional-outbox.md) ·
+  [003 синхронные вызовы](docs/adr/0003-synchronous-calls.md) ·
+  [004 уведомления и SSE](docs/adr/0004-notifications-sse.md) ·
+  [005 безопасность](docs/adr/0005-security-keycloak-jwt.md) ·
+  [006 слой данных фронтенда](docs/adr/0006-frontend-data-layer.md) ·
+  [007 деньги и конкурентность](docs/adr/0007-money-ledger-concurrency.md) ·
+  [008 наблюдаемость](docs/adr/0008-observability.md)
 
-QR-коды — визуальная имитация; геопозиция и заряд — демо-значения; добавление ребёнка показывает
-поток без создания записи; запросы не главному родственнику только отправляются. «Сбросить демо» возвращает исходные данные.
+## Известные ограничения
+
+* Стенд демонстрационный: Keycloak в режиме `start-dev`, вход через password grant, HTTP без TLS.
+* SSE-подписки живут в памяти инстанса notification (масштабирование — в ADR-004).
+* Цикл недель магазина артефактов, как и в прототипе, не моделируется: текущая неделя — «вещи в руках».
+* Трейс HTTP-запроса и трейс доставки его события через outbox — разные трейсы (ADR-008).

@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: moby
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["gateway:8080", "payment:8081", "family:8082", "rewards:8083", "notification:8084"]

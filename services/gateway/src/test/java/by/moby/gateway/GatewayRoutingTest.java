@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -22,6 +23,7 @@ import static org.springframework.security.test.web.reactive.server.SecurityMock
 /** Gateway не пропускает запросы без JWT и проксирует аутентифицированные, сохраняя заголовок Authorization. */
 @SpringBootTest
 @AutoConfigureWebTestClient
+@ActiveProfiles("test")
 class GatewayRoutingTest {
 
     static final AtomicReference<String> lastPath = new AtomicReference<>();
