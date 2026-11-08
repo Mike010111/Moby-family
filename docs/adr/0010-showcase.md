@@ -17,8 +17,7 @@
    (`window.MOBY_CONFIG.apiBaseUrl`) в репозитории пуст, поэтому фронтенд работает на логике прототипа из
    `frontend/spec` прямо в браузере, с плашкой режима. Тот же режим включается, если адрес задан, но gateway не
    ответил на `GET /api/health` за 3 с. Все пути относительные — сайт работает по адресу
-   `https://<user>.github.io/<repo>/`. Workflow `pages.yml`; там же считается бейдж покрытия
-   (`badges/coverage.json` для shields.io) — отдельный сервис покрытия не нужен.
+   `https://<user>.github.io/<repo>/`. Workflow `pages.yml`.
 2. **GHCR — готовые образы.** `images.yml` на каждый push в `main` публикует `ghcr.io/<owner>/moby-<service>`
    с тегами `latest` и SHA коммита. В compose у сервисов и `image`, и `build`: образ берётся из реестра, а если
    его нет — собирается из исходников.
