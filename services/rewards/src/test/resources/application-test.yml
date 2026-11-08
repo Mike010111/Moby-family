@@ -1,0 +1,14 @@
+spring:
+  modulith:
+    events:
+      externalization:
+        enabled: false
+  kafka:
+    admin:
+      auto-create: false
+    listener:
+      auto-startup: false
+
+logging:
+  level:
+    org.springframework.modulith: warn

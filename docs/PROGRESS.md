@@ -14,8 +14,14 @@
   проекция заморозки. Деньги — только через `PaymentClient` (RestClient, таймауты, ретрансляция JWT, перевод
   ProblemDetail). Тесты: сценарии store.test.js (через in-memory fake payment), 403, контракт клиента, Modulith.
 
+- **Этап 4. События.** Transactional outbox (Spring Modulith → Kafka) в payment, family, rewards с повторной
+  отправкой (ShedLock); идемпотентные консьюмеры (`processed_events`). rewards: баллы по событиям, магазин
+  артефактов (покупка/замена/SOLDOUT/EQUIPPED/POINTS, продление), перки для payment, статистика кэшбэка.
+  notification: лента/inbox с текстами из actions.js, SSE (`notification`, `changed`). Testcontainers Kafka ITs.
+  ADR-002/003/004.
+
 ## Дальше
-- Этап 4: outbox → Kafka в payment и family; rewards; notification (SSE).
+- Этап 5: Keycloak, проверка JWT в gateway, тесты прав.
 
 ## Известные проблемы
 - нет

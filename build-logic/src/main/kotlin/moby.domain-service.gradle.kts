@@ -1,4 +1,4 @@
-/** Сервис с собственной БД, REST API, Kafka/outbox и безопасностью: payment, family, rewards, notification. */
+/** Сервис с собственной БД, REST API, Kafka и безопасностью: payment, family, rewards, notification. */
 plugins {
     id("moby.spring-service")
 }
@@ -18,8 +18,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-kafka")
     implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
     implementation("org.springframework.modulith:spring-modulith-starter-core")
-    implementation("org.springframework.modulith:spring-modulith-starter-jpa")
-    implementation("org.springframework.modulith:spring-modulith-events-kafka")
     implementation(lib("springdoc-webmvc"))
     implementation(lib("mapstruct"))
     implementation(lib("shedlock-spring"))

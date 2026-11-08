@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import java.time.Instant;
+
 /**
  * Участник семьи: родственник (с падежами для подписей «Попросить у мамы») или ребёнок.
  * {@code frozen} у ребёнка — проекция состояния счёта из payment (события AccountFrozen/Unfrozen).
@@ -36,6 +38,7 @@ public class Member {
     @Enumerated(EnumType.STRING)
     private Cohort cohort;
     private boolean frozen;
+    private Instant frozenChangedAt;
     @Embedded
     private Geo geo;
     private Integer battery;
@@ -91,8 +94,15 @@ public class Member {
         this.battery = battery;
     }
 
-    public void setFrozen(boolean frozen) {
-        this.frozen = frozen;
+    /**
+     * Применяет событие заморозки, только если оно новее уже применённого: события разных транзакций
+     * могут прийти не по порядку (заморозили и сразу разморозили).
+     */
+    public void applyFrozen(boolean frozen, Instant changedAt) {
+        if (frozenChangedAt == null || changedAt.isAfter(frozenChangedAt)) {
+            this.frozen = frozen;
+            this.frozenChangedAt = changedAt;
+        }
     }
 
     public boolean isChild() {

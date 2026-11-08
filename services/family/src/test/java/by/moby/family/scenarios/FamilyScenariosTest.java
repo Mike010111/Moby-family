@@ -75,7 +75,7 @@ class FamilyScenariosTest extends FamilyIntegrationTest {
     @Test
     @DisplayName("Блокировка счёта: операции стоят, GPS и уроки работают")
     void frozenAccount() throws Exception {
-        frozen.apply("misha", true);
+        frozen.apply("misha", true, clock.instant());
         postAs(misha(), "/api/family/children/misha/piggies/pg-bike/deposits", "{\"amount\":\"1\"}").andExpect(jsonPath("$.code").value("FROZEN"));
         postAs(misha(), "/api/family/children/misha/tasks/t1/submit", null).andExpect(jsonPath("$.code").value("FROZEN"));
         postAs(anna(), "/api/family/children/misha/tasks", "{\"title\":\"Тест\",\"reward\":\"1\"}").andExpect(jsonPath("$.code").value("FROZEN"));
@@ -91,7 +91,7 @@ class FamilyScenariosTest extends FamilyIntegrationTest {
     void approveAfterFreeze() throws Exception {
         String id = body(postAs(misha(), "/api/family/requests", "{\"childId\":\"misha\",\"relativeId\":\"mom\",\"amount\":\"5\",\"reason\":\"На обед\"}"))
                 .at("/request/id").asString();
-        frozen.apply("misha", true);
+        frozen.apply("misha", true, clock.instant());
         postAs(anna(), "/api/family/requests/{id}/approve", null, id)
                 .andExpect(jsonPath("$.code").value("FROZEN"))
                 .andExpect(jsonPath("$.detail").value("Счёт Миша заблокирован — сначала разблокируйте"));

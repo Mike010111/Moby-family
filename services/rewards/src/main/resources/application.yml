@@ -1,0 +1,67 @@
+server:
+  port: 8083
+  shutdown: graceful
+
+spring:
+  application:
+    name: rewards
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:15432}/rewards
+    username: ${DB_USER:rewards}
+    password: ${DB_PASSWORD:rewards}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER:http://localhost:8180/realms/moby}
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:8180/realms/moby/protocol/openid-connect/certs}
+  mvc:
+    problemdetails:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:19092}
+    producer:
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      acks: all
+    consumer:
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      auto-offset-reset: earliest
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
+  modulith:
+    events:
+      externalization:
+        enabled: true
+      republish-outstanding-events-on-restart: true
+
+moby:
+  kafka:
+    topics: payment.events,family.events
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

@@ -15,6 +15,7 @@ create table members (
     age            integer,
     cohort         varchar(16) check (cohort in ('JUNIOR', 'TEEN')),
     frozen         boolean      not null default false,
+    frozen_changed_at timestamptz,
     geo_place      varchar(100),
     geo_x          double precision,
     geo_y          double precision,
