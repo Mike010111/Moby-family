@@ -20,8 +20,12 @@
   notification: лента/inbox с текстами из actions.js, SSE (`notification`, `changed`). Testcontainers Kafka ITs.
   ADR-002/003/004.
 
+- **Этап 5. Безопасность.** Keycloak realm (роли, мапперы `member_id`/`family_id`/`roles`, демо-пользователи
+  anna/misha/ivan + olga из другой семьи), resource server во всех сервисах и в gateway (WebFlux), SSE-маршрут без
+  таймаута. Тесты прав в каждом сервисе, `GatewayRoutingTest`. ADR-005.
+
 ## Дальше
-- Этап 5: Keycloak, проверка JWT в gateway, тесты прав.
+- Этап 6: Docker-образы, фронтенд на API-клиенте, smoke.sh.
 
 ## Известные проблемы
 - нет

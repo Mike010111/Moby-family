@@ -1,3 +1,5 @@
 # Точка входа для `docker compose up -d` из корня репозитория; вся конфигурация — в infra/.
+name: moby
+
 include:
   - infra/docker-compose.yml

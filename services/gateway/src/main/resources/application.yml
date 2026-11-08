@@ -4,6 +4,12 @@ server:
 spring:
   application:
     name: gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER:http://localhost:8180/realms/moby}
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:8180/realms/moby/protocol/openid-connect/certs}
   cloud:
     gateway:
       server:
@@ -25,11 +31,17 @@ spring:
               uri: ${NOTIFICATION_URL:http://localhost:8084}
               predicates:
                 - Path=/api/notifications/**
+              metadata:
+                # SSE-поток живёт долго: общий response-timeout к нему не применяется
+                response-timeout: -1
           httpclient:
             connect-timeout: 2000
             response-timeout: 10s
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
   endpoints:
     web:
       exposure:
